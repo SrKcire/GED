@@ -76,7 +76,7 @@ function iniciarSistema() {
 
   var badge = document.getElementById('sidebarPerfilBadge');
   if (S.perfil==='GED') { badge.textContent='🔑 Administrador GED'; badge.className='sidebar-perfil ged'; }
-  else { badge.textContent='👤 '+S.departamento; badge.className='sidebar-perfil user'; }
+  else { badge.textContent='👤 '+(S.departamento||S.perfil||'Usuário'); badge.className='sidebar-perfil user'; }
 
   if (S.perfil!=='GED' && S.departamento) {
     var d=document.getElementById('topbarDept'); d.textContent=S.departamento; d.style.display='';

@@ -361,6 +361,11 @@
             </div>
             <button onclick="buscarConsulta(1)" class="btn-primary">Buscar</button>
           </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
+            <span style="font-size:.72rem;font-weight:700;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.04em;">Tipo:</span>
+            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="fisico" onclick="filtrarTipoConsulta('fisico')">📦 Físico</button>
+            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="digital" onclick="filtrarTipoConsulta('digital')">💻 Digital</button>
+          </div>
         </div>
         <div id="consultaResultados"></div>
         <div id="consultaPaginacao" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;"></div>
@@ -513,6 +518,7 @@
           </div>
           <div class="doc-count-label" id="retDocCount"></div>
           <div class="doc-list-v2" id="retDocsLista"></div>
+          <div id="retDocsPaginacao" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;"></div>
           <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
             <button class="btn-primary" onclick="submeterRetirada()">Solicitar retirada</button>
             <span id="retUserMsg" style="font-size:.82rem;color:var(--texto-leve);"></span>
@@ -594,7 +600,6 @@
     <div class="preview-header">
       <div id="previewTitulo" class="preview-titulo"></div>
       <div class="preview-actions">
-        <button onclick="imprimirPreview()" class="btn-preview-print">🖨 Imprimir</button>
         <button onclick="fecharPreview()" class="modal-close-btn">✕</button>
       </div>
     </div>

@@ -43,6 +43,22 @@ function tagTipo(tipo) {
   return '<span class="tag-tipo tag-fisico">Físico</span>';
 }
 
+// Paginação client-side genérica (usada por Consulta e Retirada)
+function renderPaginacao(containerId, total, pag, por, onPageFn) {
+  var pagEl = document.getElementById(containerId);
+  if (!pagEl) return;
+  var totalPg = Math.ceil(total/por);
+  if (totalPg <= 1) { pagEl.innerHTML = '<p style="text-align:center;font-size:.73rem;color:var(--texto-leve);">'+total+' resultado(s)</p>'; return; }
+  var p='<div style="display:flex;gap:6px;align-items:center;justify-content:center;">';
+  p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===1?'disabled':'')+' onclick="'+onPageFn+'('+(pag-1)+')">‹</button>';
+  for(var i=Math.max(1,pag-2); i<=Math.min(totalPg,pag+2); i++){
+    p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid '+(i===pag?'var(--azul-escuro)':'var(--cinza-borda)')+';background:'+(i===pag?'var(--azul-escuro)':'#fff')+';color:'+(i===pag?'#fff':'var(--texto-leve)')+';cursor:pointer;font-size:.8rem;font-weight:700;" onclick="'+onPageFn+'('+i+')">'+i+'</button>';
+  }
+  p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===totalPg?'disabled':'')+' onclick="'+onPageFn+'('+(pag+1)+')">›</button>';
+  p+='</div><p style="text-align:center;font-size:.73rem;color:var(--texto-leve);margin-top:6px;">'+total+' resultado(s)</p>';
+  pagEl.innerHTML = p;
+}
+
 // ══════════════════════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════════════════════
@@ -86,9 +102,7 @@ function executarModalConfirm(){ if(_modalConfirmFn) _modalConfirmFn(); fecharMo
 // ══════════════════════════════════════════════════════════
 //  PREVIEW DOCUMENTO
 // ══════════════════════════════════════════════════════════
-var _previewOrigUrl = '';
 function abrirPreviewDocumento(url, nome) {
-  _previewOrigUrl = url;
   var previewUrl = url;
   var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (match) previewUrl = 'https://drive.google.com/file/d/' + match[1] + '/preview?rm=minimal';
@@ -96,12 +110,8 @@ function abrirPreviewDocumento(url, nome) {
   document.getElementById('previewFrame').src = previewUrl;
   document.getElementById('modalPreviewOverlay').style.display = 'flex';
 }
-function imprimirPreview() {
-  if (_previewOrigUrl) window.open(_previewOrigUrl, '_blank');
-}
 function fecharPreview() {
   document.getElementById('modalPreviewOverlay').style.display = 'none';
   document.getElementById('previewFrame').src = '';
-  _previewOrigUrl = '';
 }
 </script>

@@ -74,42 +74,55 @@ function switchRetUserTab(pane){
   }
 }
 
+var _retDocsSelecionados={};
+
 function carregarDocsRetiradaUser(){
   var respEl=document.getElementById('retUserResp'); if(respEl&&S) respEl.value=S.nome;
-  var deptEl=document.getElementById('retUserDeptField'); if(deptEl&&S) deptEl.value=S.departamento||'';
+  var deptEl=document.getElementById('retUserDeptField'); if(deptEl&&S) deptEl.value=S.departamento||S.perfil||'';
   var wrap=document.getElementById('retDocsLista');
   if(wrap) wrap.innerHTML='<div class="loading"><div class="spinner"></div>Carregando documentos...</div>';
   var countEl=document.getElementById('retDocCount'); if(countEl) countEl.textContent='';
   var dept=S?S.departamento||'':'';
   var mock=dept==='Infraestrutura'||(S&&S.perfil==='GED');
+  _retDocsSelecionados={};
   google.script.run.withSuccessHandler(function(r){
     _retDocsCache=r.documentos||[];
-    renderizarDocsRetiradaUser();
+    renderizarDocsRetiradaUser(1);
   }).buscarDocumentosRetirada(dept,mock);
 }
 
-function renderizarDocsRetiradaUser(){
+function renderizarDocsRetiradaUser(pag){
+  pag=pag||1;
   var wrap=document.getElementById('retDocsLista');
   var countEl=document.getElementById('retDocCount');
+  var pagEl=document.getElementById('retDocsPaginacao');
   if(!_retDocsCache||_retDocsCache.length===0){
     if(countEl) countEl.textContent='';
     if(wrap) wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum documento disponível.</p></div>';
+    if(pagEl) pagEl.innerHTML='';
     return;
   }
   var filterVal=(document.getElementById('retDocsFilter')||{}).value||'';
-  var lista=filterVal?_retDocsCache.filter(function(d){
+  var listaFull=filterVal?_retDocsCache.filter(function(d){
     var s=norm(d.descricao)+' '+norm(d.projeto||'')+' '+norm(String(d.caixa||''));
     return norm(filterVal).split(' ').every(function(p){return s.includes(p);});
   }):_retDocsCache;
-  if(countEl) countEl.textContent=_retDocsCache.length+' documento(s) disponíveis'+(filterVal?' · '+lista.length+' filtrado(s)':'');
+  if(countEl) countEl.textContent=_retDocsCache.length+' documento(s) disponíveis'+(filterVal?' · '+listaFull.length+' filtrado(s)':'');
   if(!wrap) return;
-  if(lista.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Nenhum resultado para o filtro.</p></div>';return;}
-  wrap.innerHTML=lista.map(function(d,i){
+  if(listaFull.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Nenhum resultado para o filtro.</p></div>';if(pagEl) pagEl.innerHTML='';return;}
+
+  var por=20, totalPg=Math.ceil(listaFull.length/por);
+  if(pag>totalPg) pag=totalPg;
+  var inicio=(pag-1)*por;
+  var lista=listaFull.slice(inicio,inicio+por);
+
+  wrap.innerHTML=lista.map(function(d){
     var realIdx=_retDocsCache.indexOf(d);
     var bloq=d.emRetirada;
     var proj=d.projeto||'NÃO DEFINIDO';
+    var marcado=_retDocsSelecionados[realIdx]?'checked':'';
     return '<div class="doc-list-item '+(bloq?'bloqueado':'')+'">'
-      +'<input type="checkbox" class="doc-list-check" id="retDoc'+realIdx+'" '+(bloq?'disabled':'')+'>'
+      +'<input type="checkbox" class="doc-list-check" id="retDoc'+realIdx+'" '+marcado+' '+(bloq?'disabled':'')+' onchange="_retDocsSelecionados['+realIdx+']=this.checked;">'
       +'<div class="doc-list-icon">📄</div>'
       +'<div class="doc-list-info">'
         +'<div class="doc-list-name">'+esc(d.descricao)+'</div>'
@@ -121,15 +134,17 @@ function renderizarDocsRetiradaUser(){
       +(bloq?'<span class="badge-status bs-em_andamento" style="font-size:.65rem;white-space:nowrap;">Em retirada</span>':'')
       +'</div>';
   }).join('');
+
+  renderPaginacao('retDocsPaginacao', listaFull.length, pag, por, 'renderizarDocsRetiradaUser');
 }
 
-function filtrarDocsRetUser(){ renderizarDocsRetiradaUser(); }
+function filtrarDocsRetUser(){ renderizarDocsRetiradaUser(1); }
 
 function submeterRetirada(){
   var motivo=document.getElementById('retMotivo').value.trim();
   if(!motivo){toast('Informe o motivo da retirada.','error');return;}
   var selecionados=_retDocsCache.filter(function(d,i){
-    var cb=document.getElementById('retDoc'+i); return cb&&cb.checked;
+    return !!_retDocsSelecionados[i];
   });
   if(selecionados.length===0){toast('Selecione ao menos um documento.','error');return;}
   var payload={responsavel:S.nome,email:S.email,departamento:S.departamento||'',motivo:motivo,documentos:selecionados};

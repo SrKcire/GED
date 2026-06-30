@@ -6,15 +6,16 @@ function prepararConsulta() {
   var sub = document.getElementById('consultaSubtitle');
   if(S.perfil!=='GED') sub.textContent='Você pode buscar apenas documentos do departamento '+S.departamento+'.';
   else sub.textContent='Busque documentos físicos e digitais em todo o acervo.';
+  _consultaTipo='';
+  document.querySelectorAll('.consulta-tipo-btn').forEach(function(b){b.classList.remove('active');});
 }
 
-var _consultaPag=1, _consultaTermo='', _consultaTipo='', _consultaResultados=[];
+var _consultaPag=1, _consultaTermo='', _consultaTipo='', _consultaResultados=[], _consultaResultadosAll=[];
 
 function buscarConsulta(pag) {
   pag=pag||1; _consultaPag=pag;
   var termo=document.getElementById('consultaInput').value.trim();
   _consultaTermo=termo;
-  _consultaTipo='';
   var clearBtn=document.getElementById('consultaClearBtn');
   clearBtn.style.display=termo?'':'none';
 
@@ -69,11 +70,8 @@ function buscarConsulta(pag) {
       });
     }
 
-    // Filtrar por tipo
-    if(_consultaTipo){ lista=lista.filter(function(item){return item.tipo===_consultaTipo;}); }
-
-    _consultaResultados=lista;
-    renderizarConsulta(pag);
+    _consultaResultadosAll=lista;
+    aplicarFiltroTipoConsulta(pag);
   }
 
   // Busca digital (Índice Drive)
@@ -83,6 +81,21 @@ function buscarConsulta(pag) {
   // Busca física (acervo do dept) — função dedicada à consulta, sem filtro de bloqueio de retirada
   google.script.run.withSuccessHandler(function(r){ resultados.fisico=r; cruzar(); })
     .buscarAcervoFisicoConsulta(dept, S.departamento==='Infraestrutura'||S.perfil==='GED');
+}
+
+function aplicarFiltroTipoConsulta(pag){
+  var lista=_consultaResultadosAll;
+  if(_consultaTipo){ lista=lista.filter(function(item){return item.tipo===_consultaTipo;}); }
+  _consultaResultados=lista;
+  renderizarConsulta(pag||1);
+}
+
+function filtrarTipoConsulta(tipo){
+  _consultaTipo = (_consultaTipo===tipo) ? '' : tipo;
+  document.querySelectorAll('.consulta-tipo-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tipo')===_consultaTipo);
+  });
+  if(_consultaResultadosAll.length) aplicarFiltroTipoConsulta(1);
 }
 
 function renderizarConsulta(pag) {
@@ -113,20 +126,7 @@ function renderizarConsulta(pag) {
       +'</div>';
   }).join('');
 
-  // Paginação
-  var totalPg=Math.ceil(total/por);
-  if(totalPg>1){
-    var p='<div style="display:flex;gap:6px;align-items:center;">';
-    p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===1?'disabled':'')+' onclick="renderizarConsulta('+(pag-1)+')">‹</button>';
-    for(var i=Math.max(1,pag-2);i<=Math.min(totalPg,pag+2);i++){
-      p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid '+(i===pag?'var(--azul-escuro)':'var(--cinza-borda)')+';background:'+(i===pag?'var(--azul-escuro)':'#fff')+';color:'+(i===pag?'#fff':'var(--texto-leve)')+';cursor:pointer;font-size:.8rem;font-weight:700;" onclick="renderizarConsulta('+i+')">'+i+'</button>';
-    }
-    p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===totalPg?'disabled':'')+' onclick="renderizarConsulta('+(pag+1)+')">›</button>';
-    p+='</div><p style="text-align:center;font-size:.73rem;color:var(--texto-leve);margin-top:6px;">'+total+' resultado(s)</p>';
-    pagEl.innerHTML=p;
-  } else {
-    pagEl.innerHTML='<p style="text-align:center;font-size:.73rem;color:var(--texto-leve);">'+total+' resultado(s)</p>';
-  }
+  renderPaginacao('consultaPaginacao', total, pag, por, 'renderizarConsulta');
 }
 
 function limparConsulta(){
@@ -134,6 +134,7 @@ function limparConsulta(){
   document.getElementById('consultaClearBtn').style.display='none';
   document.getElementById('consultaResultados').innerHTML='';
   document.getElementById('consultaPaginacao').innerHTML='';
-  _consultaResultados=[];
+  _consultaResultados=[]; _consultaResultadosAll=[]; _consultaTipo='';
+  document.querySelectorAll('.consulta-tipo-btn').forEach(function(b){b.classList.remove('active');});
 }
 </script>
