@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GED</title>
+<?!= include('style_UNIFIED'); ?>
+<style>
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;border-bottom:2px solid #e2e8f0;margin-bottom:24px;}
+.tab-btn{padding:10px 20px;background:none;border:none;border-radius:6px 6px 0 0;font-family:'Segoe UI',sans-serif;font-size:.84rem;font-weight:600;color:var(--texto-leve);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .18s;}
+.tab-btn.active{color:var(--azul-escuro);border-bottom-color:var(--azul-escuro);background:rgba(37,99,235,.05);}
+.tab-btn:hover:not(.active){color:var(--texto);background:rgba(0,0,0,.025);}
+.tab-pane{display:none;animation:fadeIn .18s ease;}
+.tab-pane.active{display:block;}
+
+/* ── ETIQUETA TIPO ARQUIVO ── */
+.tag-tipo{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:.65rem;font-weight:700;letter-spacing:.03em;font-family:'Montserrat',sans-serif;flex-shrink:0;}
+.tag-fisico  {background:#FEF3C7;color:#92400E;}
+.tag-digital {background:#DBEAFE;color:#1E40AF;}
+.tag-ambos   {background:#F3E8FF;color:#6B21A8;}
+
+/* ── DASH ADM ── */
+.dash-section-title{font-family:'Montserrat',sans-serif;font-size:.75rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin:24px 0 12px;display:flex;align-items:center;gap:8px;}
+.dash-section-title::before{content:'';width:3px;height:13px;background:var(--azul-escuro);border-radius:2px;flex-shrink:0;}
+.pendencias-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:8px;}
+.pendencia-card{background:#fff;border-radius:12px;padding:16px 18px;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul-escuro);box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:14px;}
+.pendencia-card:hover{border-color:rgba(91,164,255,.35);box-shadow:0 4px 18px rgba(91,164,255,.15);transform:translateY(-2px);}
+.pendencia-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.pendencia-icon.pi-ret {background:#FEF3C7;}
+.pendencia-icon.pi-arq {background:#DBEAFE;}
+.pendencia-icon.pi-des {background:#FEE2E2;}
+.pendencia-num{font-family:'Montserrat',sans-serif;font-weight:800;font-size:1.6rem;line-height:1;color:var(--texto);}
+.pendencia-label{font-size:.74rem;color:var(--texto-leve);margin-top:3px;}
+.pendencia-link{margin-left:auto;font-size:.7rem;color:var(--azul-escuro);font-weight:700;}
+
+/* ── DASH USER ── */
+.user-activity-list{display:flex;flex-direction:column;gap:10px;}
+.activity-item{background:#fff;border-radius:11px;padding:14px 18px;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul);display:flex;align-items:center;gap:14px;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.activity-item:hover{border-color:rgba(91,164,255,.35);box-shadow:0 4px 12px rgba(91,164,255,.1);}
+.activity-item-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.activity-item-body{flex:1;min-width:0;}
+.activity-item-title{font-size:.85rem;font-weight:600;color:var(--texto);margin-bottom:2px;}
+.activity-item-meta{font-size:.73rem;color:var(--texto-leve);}
+
+/* ── CONSULTA ── */
+.result-card{background:#fff;border-radius:11px;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul-escuro);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.result-card:hover{border-color:rgba(91,164,255,.35);box-shadow:0 4px 14px rgba(91,164,255,.13);transform:translateY(-1px);}
+.result-icon{width:38px;height:38px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#DBEAFE,#BFDBFE);display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.result-info{flex:1;min-width:0;}
+.result-nome{font-size:.86rem;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+.result-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.result-meta span{font-size:.72rem;color:var(--texto-leve);}
+
+/* ── ARQUIVAR ── */
+.tipo-docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:20px;}
+.tipo-doc-card{background:#fff;border:1.5px solid #e2e8f0;border-left:3px solid var(--cinza-borda);border-radius:11px;padding:14px 16px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.tipo-doc-card:hover{border-color:rgba(91,164,255,.35);border-left-color:var(--azul);background:#f8fbff;transform:translateX(2px);}
+.tipo-doc-card.selected{border-color:var(--azul-escuro);border-left-color:var(--azul-escuro);background:#EFF6FF;}
+.tipo-doc-icon{font-size:1.4rem;flex-shrink:0;}
+.tipo-doc-nome{font-size:.85rem;font-weight:700;color:var(--texto);}
+.tipo-doc-sub{font-size:.72rem;color:var(--texto-leve);margin-top:2px;}
+
+/* ── FORM DOC ── */
+.form-section{background:#fff;border-radius:13px;border:1.5px solid #e2e8f0;padding:22px 24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.form-section-title{font-family:'Montserrat',sans-serif;font-size:.76rem;font-weight:800;color:var(--azul-escuro);text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1.5px solid #e2e8f0;}
+.doc-row{display:grid;gap:10px;margin-bottom:10px;align-items:end;}
+.doc-row.cols-3{grid-template-columns:2fr 1.5fr 1fr auto;}
+.doc-row.cols-5{grid-template-columns:1fr 1.2fr 1fr 1fr 1fr auto;}
+.doc-row.cols-4{grid-template-columns:1.5fr 1fr 1.2fr 1fr auto;}
+.doc-row.cols-2{grid-template-columns:2fr 1fr auto;}
+.field-label{font-size:.68rem;font-weight:700;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.field-input{height:38px;padding:0 11px;border:1.5px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:.85rem;color:var(--texto);background:#fff;outline:none;width:100%;transition:border-color .18s;}
+.field-input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(91,164,255,.12);}
+.field-select{height:38px;padding:0 11px;border:1.5px solid var(--cinza-borda);border-radius:8px;font-family:inherit;font-size:.85rem;color:var(--texto);background:#fff;outline:none;width:100%;transition:border-color .18s;}
+.btn-rm{width:34px;height:38px;border-radius:8px;border:1.5px solid #FECACA;color:#DC2626;background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0;}
+.btn-rm:hover{background:#FEE2E2;}
+.btn-add-row{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:1.5px dashed var(--cinza-borda);border-radius:8px;background:transparent;font-size:.8rem;font-weight:600;color:var(--texto-leve);cursor:pointer;transition:all .18s;margin-top:4px;}
+.btn-add-row:hover{border-color:var(--azul);color:var(--azul-escuro);background:#f0f7ff;}
+.btn-primary{height:42px;padding:0 28px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--azul-900),var(--azul-escuro));color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.25);transition:filter .15s,transform .15s;}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.btn-secondary{height:42px;padding:0 20px;border-radius:10px;border:1.5px solid var(--cinza-borda);background:#fff;color:var(--texto);font-family:'Montserrat',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;transition:background .15s;}
+.btn-secondary:hover{background:var(--cinza-claro);}
+
+/* ── HISTÓRICO LIST ── */
+.hist-list{display:flex;flex-direction:column;gap:10px;}
+.hist-card{background:#fff;border-radius:11px;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul-escuro);padding:14px 18px;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.hist-card:hover{border-color:rgba(91,164,255,.35);box-shadow:0 4px 12px rgba(91,164,255,.1);}
+.hist-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.hist-card-cod{font-family:'Montserrat',sans-serif;font-weight:700;font-size:.9rem;color:var(--azul-escuro);}
+.hist-card-meta{font-size:.74rem;color:var(--texto-leve);margin-bottom:8px;}
+.hist-card-docs{font-size:.8rem;color:var(--texto-leve);font-style:italic;}
+
+/* ── ADM LOTE CARDS ── */
+.lote-card{background:#fff;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul-escuro);border-radius:13px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.lote-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;cursor:pointer;transition:background .15s;user-select:none;}
+.lote-header:hover{background:#f8fbff;}
+.lote-cod{font-family:'Montserrat',sans-serif;font-weight:700;font-size:.93rem;color:var(--azul-escuro);}
+.lote-meta-text{font-size:.76rem;color:var(--texto-leve);margin-top:2px;}
+
+.lote-docs-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:14px;}
+.lote-docs-table th{background:#f0f7ff;padding:7px 12px;text-align:left;font-size:.67rem;font-weight:700;color:var(--texto-leve);text-transform:uppercase;font-family:'Montserrat',sans-serif;}
+.lote-docs-table td{padding:7px 12px;border-bottom:1px solid #e8f0fe;}
+.lote-docs-table tr:last-child td{border-bottom:none;}
+.lote-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.btn-acao{height:34px;padding:0 14px;border-radius:8px;border:none;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:5px;font-family:'Montserrat',sans-serif;}
+.btn-aprovar{background:#D1FAE5;color:#065F46;} .btn-aprovar:hover{background:#A7F3D0;}
+.btn-cancelar{background:#FEE2E2;color:#991B1B;} .btn-cancelar:hover{background:#FECACA;}
+.btn-liberar{background:#D1FAE5;color:#065F46;} .btn-liberar:hover{background:#A7F3D0;}
+.btn-adiar{background:#E0E7FF;color:#3730A3;} .btn-adiar:hover{background:#C7D2FE;}
+.btn-devolver{background:#DBEAFE;color:#1E40AF;border:1.5px solid #BFDBFE;} .btn-devolver:hover{background:#BFDBFE;}
+
+/* ── STATUS BADGES ── */
+.badge-status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;font-family:'Montserrat',sans-serif;white-space:nowrap;}
+.badge-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.bs-pendente{background:#FEF3C7;color:#B45309;}
+.bs-aprovado,.bs-liberado,.bs-devolvido{background:#D1FAE5;color:#065F46;}
+.bs-cancelado,.bs-recusado{background:#FEE2E2;color:#991B1B;}
+.bs-adiado{background:#E0E7FF;color:#3730A3;}
+.bs-em_andamento{background:#DBEAFE;color:#1E40AF;}
+
+/* ── RETIRADA DOCS ── */
+.ret-doc-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:9px;border:1.5px solid #e2e8f0;border-left:3px solid var(--azul-claro);margin-bottom:8px;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+.ret-doc-item:hover:not(.bloqueado){border-color:rgba(91,164,255,.35);border-left-color:var(--azul);}
+.ret-doc-item.bloqueado{opacity:.5;pointer-events:none;}
+.ret-doc-check{width:18px;height:18px;flex-shrink:0;cursor:pointer;}
+.ret-doc-info{flex:1;min-width:0;}
+.ret-doc-nome{font-size:.85rem;font-weight:600;color:var(--texto);}
+.ret-doc-sub{font-size:.73rem;color:var(--texto-leve);}
+
+/* ── EM DESENVOLVIMENTO ── */
+.em-dev{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center;}
+.em-dev-icon{font-size:3.5rem;margin-bottom:20px;opacity:.6;}
+.em-dev h2{font-family:'Montserrat',sans-serif;font-size:1.3rem;font-weight:800;color:var(--azul-escuro);margin-bottom:10px;}
+.em-dev p{font-size:.88rem;color:var(--texto-leve);max-width:380px;line-height:1.6;}
+.em-dev-badge{margin-top:20px;display:inline-block;padding:6px 18px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:.75rem;font-weight:700;font-family:'Montserrat',sans-serif;}
+
+/* ── MODAL PENDÊNCIAS ── */
+.pendencias-modal-list{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;padding-right:4px;}
+.pendencias-modal-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;}
+.pendencias-modal-item:hover{border-color:var(--azul);background:#f8fbff;}
+.pmi-cod{font-family:'Montserrat',sans-serif;font-weight:700;font-size:.88rem;color:var(--azul-escuro);}
+.pmi-info{flex:1;min-width:0;}
+.pmi-meta{font-size:.74rem;color:var(--texto-leve);}
+.pmi-tipo{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;font-family:'Montserrat',sans-serif;}
+.pmi-tipo.t-ret{background:#FEF3C7;color:#92400E;}
+.pmi-tipo.t-arq{background:#DBEAFE;color:#1E40AF;}
+.pmi-tipo.t-des{background:#FEE2E2;color:#991B1B;}
+
+/* ── CAIXA INPUT WITH COPY ── */
+.caixa-wrap{display:flex;gap:4px;align-items:center;}
+.caixa-wrap .field-input{flex:1;}
+.btn-copy-cx{width:34px;height:38px;border-radius:8px;border:1.5px solid var(--cinza-borda);background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;transition:all .15s;flex-shrink:0;}
+.btn-copy-cx:hover{background:var(--azul-escuro);color:#fff;border-color:var(--azul-escuro);}
+
+/* ── APROVAÇÃO INLINE (ADM arquivamento) ── */
+.approve-inline-field input,.approve-inline-field select{height:32px;font-size:.78rem;padding:0 8px;min-width:72px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 20px;color:#94a3b8;}
+.empty-state-icon{font-size:2.8rem;margin-bottom:12px;}
+.empty-state p{font-size:.86rem;}
+
+/* ── SPINNER ── */
+.spinner{width:32px;height:32px;border:3px solid #DBEAFE;border-top-color:var(--azul-escuro);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px;}
+.loading{text-align:center;padding:40px;color:var(--texto-leve);font-size:.84rem;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:.8rem;font-weight:700;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18);transform:translateY(80px);opacity:0;transition:transform .3s,opacity .3s;z-index:3000;max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:linear-gradient(135deg,#16a34a,#22c55e);}
+.toast.error{background:linear-gradient(135deg,#dc2626,#f87171);}
+.toast.info{background:linear-gradient(135deg,#1e3a8a,#2563eb);}
+</style>
+</head>
+<body>
+
+<!-- AURORA LOGIN -->
+<div class="login-aurora" id="loginAurora">
+  <div class="login-aurora-band a1"></div>
+  <div class="login-aurora-band a2"></div>
+  <div class="login-aurora-band a3"></div>
+</div>
+<div class="login-noise" id="loginNoise"></div>
+
+<!-- ══════════════ TELA LOGIN ══════════════ -->
+<div id="telaLogin">
+  <div class="login-wrapper">
+    <div class="login-pill">
+      <div class="login-pill-icon">GED</div>
+      <span class="login-pill-text">Colégio Santo Agostinho · Leblon</span>
+      <span class="login-pill-dot"></span>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-badge">CSA</div>
+        <h2>GED</h2>
+        <p class="login-sub-text">Gestão Eletrônica de Documentos</p>
+      </div>
+      <div class="login-field">
+        <label>Login</label>
+        <div class="login-input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="iLogin" placeholder="Seu login" autocomplete="username">
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Senha</label>
+        <div class="login-input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="iSenha" placeholder="Sua senha" autocomplete="current-password">
+          <button class="login-show-pwd" id="btnShowPwd">👁</button>
+        </div>
+      </div>
+      <div class="login-erro" id="loginErro"></div>
+      <button class="btn-entrar" id="btnEntrar">Entrar</button>
+      <p class="login-footer"><span></span>Sistema seguro · Acesso restrito</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL TROCA SENHA ══════════════ -->
+<div id="modalTrocaSenha" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:rgba(6,14,36,.88);backdrop-filter:blur(8px);">
+  <div style="background:rgba(8,18,50,.95);border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:36px;width:100%;max-width:420px;box-shadow:0 32px 80px rgba(0,0,0,.7);">
+    <h3 style="font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:6px;">🔐 Troca de senha obrigatória</h3>
+    <p style="font-size:.83rem;color:rgba(148,200,255,.6);margin-bottom:22px;">Por segurança, defina uma nova senha antes de continuar. Mínimo 6 caracteres.</p>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Senha atual</label>
+      <input type="password" id="tAtual" placeholder="Senha atual" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Nova senha</label>
+      <input type="password" id="tNova" placeholder="Nova senha" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;">
+      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Confirmar nova senha</label>
+      <input type="password" id="tConfirm" placeholder="Confirme a nova senha" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+    </div>
+    <div id="trocaErro" style="display:none;color:#fca5a5;font-size:.8rem;margin-bottom:12px;"></div>
+    <button onclick="confirmarTrocaSenha()" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;">Salvar nova senha</button>
+  </div>
+</div>
+
+<!-- AURORA SIDEBAR -->
+<div class="sidebar-aurora" id="sidebarAurora" style="display:none">
+  <div class="sidebar-aurora-band a1"></div>
+  <div class="sidebar-aurora-band a2"></div>
+</div>
+
+<!-- ══════════════ SISTEMA ══════════════ -->
+<div id="sistema" style="display:none;min-height:100vh;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-text">
+        <span>GED</span>
+        <span>Gestão Eletrônica de Documentos</span>
+      </div>
+    </div>
+    <div class="sidebar-perfil" id="sidebarPerfilBadge"></div>
+    <div class="sidebar-nav" id="sidebarNav"></div>
+    <div style="margin-top:auto;">
+      <div id="sairPanel" style="max-height:0;overflow:hidden;transition:max-height .25s;padding:0 10px;">
+        <button class="btn-sair" onclick="fazerLogout()">⬅ Sair do sistema</button>
+      </div>
+      <div class="sidebar-user" id="sidebarUserBtn">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <span id="userNome">—</span>
+          <span id="userPerfil">—</span>
+        </div>
+        <span class="user-chevron" id="userChevron">▾</span>
+      </div>
+      <div class="sidebar-footer">GED © 2026</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <button id="hamburgerBtn" onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none;background:none;border:none;cursor:pointer;color:#64748b;font-size:1.3rem;padding:4px 8px;margin-right:6px;line-height:1;">☰</button>
+      <span class="topbar-title" id="topbarTitle" style="display:none;">—</span>
+      <span id="topbarDept" class="topbar-dept" style="display:none;"></span>
+      <div class="topbar-dot" style="margin-left:auto;"></div>
+    </div>
+
+    <div class="content" id="contentArea">
+
+      <!-- ════ DASHBOARD ADM ════ -->
+      <div class="page" id="page-dash-adm">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Visão geral dos serviços do GED.</p>
+        </div>
+
+        <!-- Métricas gerais -->
+        <div class="dash-section-title">Resumo de serviços</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:8px;" id="admMetricas">
+          <div class="dash-card"><div class="dc-label">Arquivamentos hoje</div><div class="dc-value dc-arq" id="mArqHoje">—</div></div>
+          <div class="dash-card"><div class="dc-label">Retiradas abertas</div><div class="dc-value dc-pendente" id="mRetAbertas">—</div></div>
+          <div class="dash-card"><div class="dc-label">Devoluções pendentes</div><div class="dc-value dc-liberado" id="mDevPend">—</div></div>
+          <div class="dash-card"><div class="dc-label">Usuários ativos</div><div class="dc-value dc-usr" id="mUsrAtivos">—</div></div>
+        </div>
+
+        <!-- Card de atividades pendentes -->
+        <div class="dash-section-title" style="margin-top:28px;">Atividades pendentes</div>
+        <div class="pendencias-grid" id="pendenciasGrid">
+          <div class="pendencia-card" onclick="abrirModalPendencias('ret')">
+            <div class="pendencia-icon pi-ret">📤</div>
+            <div style="flex:1;">
+              <div class="pendencia-num" id="pNumRet">—</div>
+              <div class="pendencia-label">Retiradas aguardando liberação</div>
+            </div>
+            <span class="pendencia-link">Ver ›</span>
+          </div>
+          <div class="pendencia-card" onclick="abrirModalPendencias('arq')">
+            <div class="pendencia-icon pi-arq">🗄</div>
+            <div style="flex:1;">
+              <div class="pendencia-num" id="pNumArq">—</div>
+              <div class="pendencia-label">Arquivamentos aguardando aprovação</div>
+            </div>
+            <span class="pendencia-link">Ver ›</span>
+          </div>
+          <div class="pendencia-card" onclick="abrirModalPendencias('des')">
+            <div class="pendencia-icon pi-des">🗑</div>
+            <div style="flex:1;">
+              <div class="pendencia-num" id="pNumDes">—</div>
+              <div class="pendencia-label">Descartes aguardando análise</div>
+            </div>
+            <span class="pendencia-link">Ver ›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ DASHBOARD USUÁRIO ════ -->
+      <div class="page" id="page-dash-user">
+        <div class="page-header">
+          <h1 id="dashUserBemVindo">Olá!</h1>
+          <p>Suas atividades recentes no GED.</p>
+        </div>
+        <div id="userAtividades"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+      </div>
+
+      <!-- ════ CONSULTA ════ -->
+      <div class="page" id="page-consulta">
+        <div class="page-v2-header" style="margin-bottom:18px;">
+          <div>
+            <h1 class="page-v2-title">🔍 Consulta de Documentos</h1>
+            <p class="page-v2-sub" id="consultaSubtitle">Pesquise por qualquer parte do nome do arquivo no acervo.</p>
+          </div>
+        </div>
+        <div class="section-card" style="margin-bottom:16px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="filter-bar-wrap" style="flex:1;">
+              <span class="fi">🔍</span>
+              <input type="text" id="consultaInput" class="filter-bar-input" placeholder="Digite o nome do documento, projeto ou empresa..." onkeydown="if(event.key==='Enter')buscarConsulta(1)">
+              <button id="consultaClearBtn" onclick="limparConsulta()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;display:none;">✕</button>
+            </div>
+            <button onclick="buscarConsulta(1)" style="height:40px;padding:0 22px;background:linear-gradient(135deg,var(--azul-900),var(--azul-escuro));color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.25);transition:filter .15s;white-space:nowrap;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">Buscar</button>
+          </div>
+        </div>
+        <div id="consultaResultados"></div>
+        <div id="consultaPaginacao" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;"></div>
+      </div>
+
+      <!-- ════ ARQUIVAR — ADM ════ -->
+      <div class="page" id="page-arquivar-adm">
+        <div class="page-header">
+          <h1>Arquivamento</h1>
+          <p>Gerencie solicitações e faça novos arquivamentos.</p>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="arq-adm-aprovar" onclick="switchTab(this,'arq-adm')">📋 Solicitações pendentes</button>
+          <button class="tab-btn" data-tab="arq-adm-novo" onclick="switchTab(this,'arq-adm')">➕ Nova solicitação</button>
+          <button class="tab-btn" data-tab="arq-adm-hist" onclick="switchTab(this,'arq-adm');carregarHistArq('adm')">📁 Histórico</button>
+        </div>
+        <!-- Aba: Aprovar -->
+        <div class="tab-pane active" id="arq-adm-aprovar">
+          <div id="arqAdmLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        </div>
+        <!-- Aba: Novo -->
+        <div class="tab-pane" id="arq-adm-novo">
+          <div id="arqAdmFormWrap"></div>
+        </div>
+        <!-- Aba: Histórico -->
+        <div class="tab-pane" id="arq-adm-hist">
+          <div id="arqAdmHistLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- ════ ARQUIVAR — USUÁRIO ════ -->
+      <div class="page" id="page-arquivar-user">
+        <div class="page-v2-header">
+          <div>
+            <h1 class="page-v2-title">Arquivamento de Documentos</h1>
+            <p class="page-v2-sub">Preencha os dados e registre os documentos para arquivamento.</p>
+          </div>
+          <div class="tab-action-btns">
+            <button class="tab-action-btn active gold" id="tabArqUserForm" onclick="switchArqUserTab('form')">⭐ Formulário</button>
+            <button class="tab-action-btn" id="tabArqUserHist" onclick="switchArqUserTab('hist');carregarHistArq('user')">🕐 Histórico</button>
+          </div>
+        </div>
+        <!-- Formulário -->
+        <div id="arq-user-form-pane">
+          <div class="section-card">
+            <div class="section-label">Identificação</div>
+            <div class="field-group cols-2">
+              <div class="field-block"><label>Responsável</label><input type="text" id="arqUserResp" readonly></div>
+              <div class="field-block"><label>Departamento</label><input type="text" id="arqUserDept" readonly></div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-label">Configuração</div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end;">
+              <div class="field-block">
+                <label>Tipo de Documento</label>
+                <select id="arqUserTipo"></select>
+              </div>
+              <div class="field-block" style="min-width:110px;">
+                <label>Quantidade</label>
+                <input type="number" id="arqUserQtd" min="1" max="50" value="1" placeholder="Ex: 10">
+              </div>
+              <button class="btn-plus" onclick="adicionarLinhasArqUser()">+</button>
+            </div>
+          </div>
+          <div id="arqUserDocsArea">
+            <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
+              <div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">📄</div>
+              <p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p>
+            </div>
+          </div>
+          <div id="arqUserSubmitArea" style="display:none;margin-top:4px;">
+            <button class="btn-primary" id="btnArqUserSubmit" onclick="submeterArquivamentoUser()">Enviar solicitação</button>
+          </div>
+        </div>
+        <!-- Histórico -->
+        <div id="arq-user-hist-pane" style="display:none;">
+          <div class="filter-bar">
+            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="arqHistFilter" placeholder="Filtrar por código, tipo, data..." oninput="filtrarArqHistUser()"></div>
+            <button class="btn-atualizar" onclick="carregarHistArq('user')">🔁 Atualizar</button>
+          </div>
+          <div class="stats-chips">
+            <div class="stat-chip"><div class="sc-num" id="scArqOps">0</div><div class="sc-lbl">Operações</div></div>
+            <div class="stat-chip"><div class="sc-num" id="scArqDocs">0</div><div class="sc-lbl">Documentos</div></div>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Código</th><th>Data</th><th>Tipo / Descrição</th><th>Docs</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="arqHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
+            </table>
+            <div class="data-table-footer" id="arqHistTableFooter">Mostrando 0-0 de 0 operação(ões)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ RETIRADA — ADM ════ -->
+      <div class="page" id="page-retirada-adm">
+        <div class="page-header">
+          <h1>Solicitações de Retirada</h1>
+          <p>Gerencie as solicitações recebidas.</p>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="ret-adm-pend" onclick="switchTab(this,'ret-adm')">⏳ Pendentes</button>
+          <button class="tab-btn" data-tab="ret-adm-hist" onclick="switchTab(this,'ret-adm');carregarRetiradasAdm('historico')">📁 Histórico</button>
+        </div>
+        <div class="tab-pane active" id="ret-adm-pend">
+          <!-- Filtro de setor -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+            <select id="retAdmSetor" onchange="carregarRetiradasAdm('pendente')" style="height:36px;border:1.5px solid var(--cinza-borda);border-radius:8px;padding:0 12px;font-family:inherit;font-size:.82rem;background:#fff;outline:none;">
+              <option value="todos">Todos os setores</option>
+              <option>Infraestrutura</option><option>Administrativo</option>
+              <option>Financeiro</option><option>RH</option>
+              <option>Pedagógico</option><option>Comunicação</option><option>TI</option>
+            </select>
+          </div>
+          <div id="retAdmPendLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        </div>
+        <div class="tab-pane" id="ret-adm-hist">
+          <div id="retAdmHistLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- ════ RETIRADA — USUÁRIO ════ -->
+      <div class="page" id="page-retirada-user">
+        <div class="page-v2-header">
+          <div>
+            <h1 class="page-v2-title">Retirada de Documentos</h1>
+            <p class="page-v2-sub">Solicite a retirada de documentos do departamento.</p>
+          </div>
+          <div class="tab-action-btns">
+            <button class="tab-action-btn active red" id="tabRetUserSol" onclick="switchRetUserTab('sol')">📥 Solicitar</button>
+            <button class="tab-action-btn" id="tabRetUserHist" onclick="switchRetUserTab('hist');carregarHistRetiradaUser()">🕐 Histórico</button>
+          </div>
+        </div>
+        <!-- Solicitar -->
+        <div id="ret-user-sol-pane">
+          <div class="section-card">
+            <div class="field-group cols-2" style="margin-bottom:12px;">
+              <div class="field-block"><label>Responsável</label><input type="text" id="retUserResp" readonly></div>
+              <div class="field-block"><label>Departamento</label><input type="text" id="retUserDeptField" readonly></div>
+            </div>
+            <div class="field-block">
+              <label>Motivo da Retirada <span style="color:var(--vermelho);">*</span></label>
+              <textarea id="retMotivo" placeholder="Descreva o motivo da retirada dos documentos..."></textarea>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="retDocsFilter" placeholder="Filtrar por descrição, projeto ou caixa..." oninput="filtrarDocsRetUser()"></div>
+            <button class="btn-atualizar" onclick="carregarDocsRetiradaUser()">🔁 Atualizar</button>
+          </div>
+          <div class="doc-count-label" id="retDocCount"></div>
+          <div class="doc-list-v2" id="retDocsLista"></div>
+          <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+            <button class="btn-primary" onclick="submeterRetirada()">Solicitar retirada</button>
+            <span id="retUserMsg" style="font-size:.82rem;color:var(--texto-leve);"></span>
+          </div>
+        </div>
+        <!-- Histórico -->
+        <div id="ret-user-hist-pane" style="display:none;">
+          <div class="filter-bar">
+            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="retHistFilter" placeholder="Filtrar por código, documento, status..." oninput="filtrarRetHistUser()"></div>
+            <button class="btn-atualizar" onclick="carregarHistRetiradaUser()">🔁 Atualizar</button>
+          </div>
+          <div class="stats-chips">
+            <div class="stat-chip"><div class="sc-num" id="scRetSol">0</div><div class="sc-lbl">Solicitações</div></div>
+            <div class="stat-chip"><div class="sc-num" id="scRetPend">0</div><div class="sc-lbl">Pendentes</div></div>
+            <div class="stat-chip"><div class="sc-num" id="scRetLib">0</div><div class="sc-lbl">Liberados</div></div>
+            <div class="stat-chip"><div class="sc-num" id="scRetConc">0</div><div class="sc-lbl">Concluídos</div></div>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Código</th><th>Data</th><th>Documento</th><th>Caixa</th><th>Retirada</th><th>Devolução</th></tr></thead>
+              <tbody id="retHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
+            </table>
+            <div class="data-table-footer" id="retHistTableFooter">Mostrando 0-0 de 0 solicitação(ões)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ DESCARTE ════ -->
+      <div class="page" id="page-descarte">
+        <div class="page-header">
+          <h1>Descarte de Documentos</h1>
+        </div>
+        <div class="em-dev">
+          <div class="em-dev-icon">🚧</div>
+          <h2>Em desenvolvimento</h2>
+          <p>Esta funcionalidade estará disponível em breve. Acompanhe as atualizações do sistema GED.</p>
+          <span class="em-dev-badge">Em breve</span>
+        </div>
+      </div>
+
+      <!-- ════ DIGITALIZAÇÃO (ADM only) ════ -->
+      <div class="page" id="page-digitalizacao">
+        <div class="page-header">
+          <h1>Digitalização</h1>
+        </div>
+        <div class="em-dev">
+          <div class="em-dev-icon">📷</div>
+          <h2>Em desenvolvimento</h2>
+          <p>O módulo de digitalização de dossiês de alunos estará disponível em breve.</p>
+          <span class="em-dev-badge">Em breve</span>
+        </div>
+      </div>
+
+    </div><!-- /contentArea -->
+  </main>
+</div><!-- /sistema -->
+
+<!-- ══════ MODAL GENÉRICO ══════ -->
+<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div id="modalTitulo" style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;color:var(--texto);"></div>
+        <div id="modalSub" style="font-size:.82rem;color:var(--texto-leve);margin-top:4px;"></div>
+      </div>
+      <button onclick="fecharModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94a3b8;padding:0 4px;">✕</button>
+    </div>
+    <div id="modalCorpo"></div>
+    <div id="modalBtns" style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button onclick="fecharModal()" style="height:38px;padding:0 18px;background:var(--cinza-claro);border:1.5px solid var(--cinza-borda);border-radius:9px;font-weight:700;font-size:.82rem;cursor:pointer;color:var(--texto);font-family:'Montserrat',sans-serif;">Fechar</button>
+      <button id="modalConfirmar" style="display:none;height:38px;padding:0 22px;border:none;border-radius:9px;font-weight:700;font-size:.82rem;cursor:pointer;color:#fff;font-family:'Montserrat',sans-serif;background:linear-gradient(135deg,var(--azul-900),var(--azul-escuro));" onclick="executarModalConfirm()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL PREVIEW DOCUMENTO ══════ -->
+<div id="modalPreviewOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.8);backdrop-filter:blur(4px);z-index:3000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:96%;max-width:900px;height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;gap:10px;">
+      <div id="previewTitulo" style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:.95rem;color:var(--texto);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <button onclick="imprimirPreview()" style="height:34px;padding:0 14px;background:var(--azul-escuro);color:#fff;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;border:none;">🖨 Imprimir</button>
+        <button onclick="fecharPreview()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94a3b8;padding:0 4px;">✕</button>
+      </div>
+    </div>
+    <div style="position:relative;flex:1;min-height:0;">
+      <iframe id="previewFrame" src="" style="width:100%;height:100%;border:none;border-radius:10px;background:#f8fafc;display:block;"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<?!= include('script_utils'); ?>
+<?!= include('script_login'); ?>
+<?!= include('script_sidebar'); ?>
+<?!= include('script_dashboard'); ?>
+<?!= include('script_consulta'); ?>
+<?!= include('script_arquivamento'); ?>
+<?!= include('script_retirada'); ?>
+
+</body>
+</html>

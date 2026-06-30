@@ -1,0 +1,110 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════
+var S = null; // sessão: {nome, email, perfil, departamento}
+var _paginaAtual = '';
+var _modalConfirmFn = null;
+var _consultaCache = { fisico: [], digital: [] };
+var _retDocsCache = [];
+var _admPendencias = { ret: [], arq: [], des: [] };
+window._LOTES = {}; // mapa código→objeto lote, evita serialização JSON em onclick (vetor XSS)
+
+// ══════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escA(s) { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function norm(s) { return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(); }
+
+var _toastT = null;
+function toast(msg, tipo) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast '+(tipo||'info')+' show';
+  clearTimeout(_toastT); _toastT = setTimeout(function(){ el.classList.remove('show'); }, 3500);
+}
+
+function mostrarSpinner(id) {
+  document.getElementById(id).innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+}
+
+function statusBadge(s) {
+  var cls = { PENDENTE:'bs-pendente', APROVADO:'bs-aprovado', LIBERADO:'bs-liberado',
+              CANCELADO:'bs-cancelado', RECUSADO:'bs-recusado', ADIADO:'bs-adiado',
+              DEVOLVIDO:'bs-devolvido', 'EM_ANDAMENTO':'bs-em_andamento' };
+  return '<span class="badge-status '+(cls[s]||'bs-pendente')+'">'+esc(s)+'</span>';
+}
+
+function tagTipo(tipo) {
+  if (tipo === 'ambos')   return '<span class="tag-tipo tag-ambos">Físico + Digital</span>';
+  if (tipo === 'digital') return '<span class="tag-tipo tag-digital">Digital</span>';
+  return '<span class="tag-tipo tag-fisico">Físico</span>';
+}
+
+// ══════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════
+function switchTab(btn, grupo) {
+  var tabId = btn.getAttribute('data-tab');
+  var container = grupo ? document.querySelector('[data-tab^="'+grupo+'"]').closest('.page') : btn.closest('.page');
+  container.querySelectorAll('.tab-btn[data-tab^="'+grupo+'"]').forEach(function(b){ b.classList.remove('active'); });
+  container.querySelectorAll('.tab-pane').forEach(function(p){
+    if(!grupo || p.id.indexOf(grupo)===0) p.classList.remove('active');
+  });
+  btn.classList.add('active');
+  var pane = document.getElementById(tabId);
+  if (pane) pane.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL GENÉRICO
+// ══════════════════════════════════════════════════════════
+function abrirModal(titulo, sub, corpo, mostrarConfirmar, labelConfirmar, clsConfirmar, fn, largura) {
+  document.getElementById('modalTitulo').textContent=titulo;
+  document.getElementById('modalSub').textContent=sub||'';
+  document.getElementById('modalCorpo').innerHTML=corpo||'';
+  var btn=document.getElementById('modalConfirmar');
+  if(mostrarConfirmar){
+    btn.style.display=''; btn.textContent=labelConfirmar||'Confirmar';
+    btn.style.background=clsConfirmar==='vermelho'?'linear-gradient(135deg,#dc2626,#f87171)':
+      clsConfirmar==='verde'?'linear-gradient(135deg,#16a34a,#22c55e)':
+      clsConfirmar==='amarelo'?'linear-gradient(135deg,#D97706,#F59E0B)':
+      'linear-gradient(135deg,var(--azul-900),var(--azul-escuro))';
+    _modalConfirmFn=fn;
+  } else { btn.style.display='none'; _modalConfirmFn=null; }
+  var inner=document.querySelector('#modalOverlay>div');
+  if(inner) inner.style.maxWidth=largura||'680px';
+  var ov=document.getElementById('modalOverlay'); ov.style.display='flex';
+}
+function fecharModal(){
+  document.getElementById('modalOverlay').style.display='none';
+  _modalConfirmFn=null;
+  var inner=document.querySelector('#modalOverlay>div');
+  if(inner) inner.style.maxWidth='680px';
+}
+function executarModalConfirm(){ if(_modalConfirmFn) _modalConfirmFn(); fecharModal(); }
+
+// ══════════════════════════════════════════════════════════
+//  PREVIEW DOCUMENTO
+// ══════════════════════════════════════════════════════════
+var _previewOrigUrl = '';
+function abrirPreviewDocumento(url, nome) {
+  _previewOrigUrl = url;
+  var previewUrl = url;
+  var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) previewUrl = 'https://drive.google.com/file/d/' + match[1] + '/preview?rm=minimal';
+  document.getElementById('previewTitulo').textContent = nome || 'Documento';
+  document.getElementById('previewFrame').src = previewUrl;
+  document.getElementById('modalPreviewOverlay').style.display = 'flex';
+}
+function imprimirPreview() {
+  if (_previewOrigUrl) window.open(_previewOrigUrl, '_blank');
+}
+function fecharPreview() {
+  document.getElementById('modalPreviewOverlay').style.display = 'none';
+  document.getElementById('previewFrame').src = '';
+  _previewOrigUrl = '';
+}
+</script>

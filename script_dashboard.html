@@ -1,0 +1,128 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD ADM
+// ══════════════════════════════════════════════════════════
+function carregarDashAdm() {
+  google.script.run.withSuccessHandler(function(r){
+    document.getElementById('mArqHoje').textContent=r.arquivamentosHoje||0;
+    document.getElementById('mRetAbertas').textContent=(r.pendentes||0)+(r.liberados||0);
+    document.getElementById('mDevPend').textContent=r.liberados||0;
+    document.getElementById('mUsrAtivos').textContent=r.usuariosAtivos||0;
+  }).getDashboard(S.email);
+
+  // Carregar pendências
+  google.script.run.withSuccessHandler(function(r){
+    _admPendencias.ret = (r.lotes||[]).filter(function(l){return l.statusRetirada==='PENDENTE';});
+    document.getElementById('pNumRet').textContent=_admPendencias.ret.length;
+  }).getRetiradas('todos', S.email);
+
+  google.script.run.withSuccessHandler(function(r){
+    _admPendencias.arq = r.lotes||[];
+    document.getElementById('pNumArq').textContent=_admPendencias.arq.length;
+  }).getArquivamentos('pendentes', S.email);
+
+  google.script.run.withSuccessHandler(function(r){
+    _admPendencias.des = (r.descartes||[]).filter(function(d){return d.status==='PENDENTE';});
+    document.getElementById('pNumDes').textContent=_admPendencias.des.length;
+  }).getDescartes('pendentes', S.email);
+}
+
+function abrirModalPendencias(tipo) {
+  var titulos={ret:'Retiradas aguardando liberação',arq:'Arquivamentos aguardando aprovação',des:'Descartes aguardando análise'};
+  var lista = _admPendencias[tipo]||[];
+  var dest  = tipo==='ret'?'retirada-adm':tipo==='arq'?'arquivar-adm':'descarte';
+  var fnNav = tipo==='ret'?carregarRetiradasAdm.bind(null,'pendente'):tipo==='arq'?carregarArqAdm:null;
+
+  if(lista.length===0){
+    abrirModal(titulos[tipo],'','<div class="empty-state"><div class="empty-state-icon">✅</div><p>Nenhuma pendência no momento.</p></div>',false);
+    return;
+  }
+
+  var html='<div class="pendencias-modal-list">';
+  lista.forEach(function(item){
+    var cod = item.codigo||item.cod||'—';
+    var resp= item.responsavel||'—';
+    var dept= item.departamento||'—';
+    var data= item.data||'—';
+    var tipoLabel= tipo==='ret'?'Retirada':tipo==='arq'?'Arquivamento':'Descarte';
+    var tipoClass= tipo==='ret'?'t-ret':tipo==='arq'?'t-arq':'t-des';
+    html+='<div class="pendencias-modal-item" onclick="irParaPendencia(\''+esc(dest)+'\',\''+escA(cod)+'\')">'
+      +'<span class="pmi-tipo '+tipoClass+'">'+tipoLabel+'</span>'
+      +'<div class="pmi-info"><div class="pmi-cod">'+esc(cod)+'</div><div class="pmi-meta">'+esc(resp)+' · '+esc(dept)+' · '+esc(data)+'</div></div>'
+      +'<span style="color:var(--azul-escuro);font-size:.8rem;">›</span>'
+      +'</div>';
+  });
+  html+='</div>';
+  abrirModal(titulos[tipo], lista.length+' solicitação(ões)', html, false);
+}
+
+function irParaPendencia(dest, cod) {
+  fecharModal();
+  navegar(dest);
+  if(dest==='retirada-adm') carregarRetiradasAdm('pendente');
+  else if(dest==='arquivar-adm') carregarArqAdm();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD USUÁRIO
+// ══════════════════════════════════════════════════════════
+function carregarDashUser() {
+  document.getElementById('dashUserBemVindo').textContent = 'Olá, '+S.nome.split(' ')[0]+'!';
+  mostrarSpinner('userAtividades');
+  var resultados = { arq:null, ret:null };
+
+  function tentarRenderizar(){
+    if(!resultados.arq || !resultados.ret) return;
+    var html='';
+
+    // Arquivamentos
+    var arqFiltrado=(resultados.arq.registros||[]).slice(0,5);
+    html+='<div style="margin-bottom:24px;">';
+    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Meus arquivamentos</div>';
+    if(arqFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhum arquivamento registrado.</div>'; }
+    else {
+      html+='<div class="user-activity-list">';
+      arqFiltrado.forEach(function(r){
+        html+='<div class="activity-item"><div class="activity-item-icon" style="background:#EFF6FF;">🗄</div>'
+          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(r['CÓDIGO']||'—')+'</div>'
+          +'<div class="activity-item-meta">'+esc(r['DATA']||'—')+'</div></div>'
+          +statusBadge(r['STATUS']||'PENDENTE')+'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+
+    // Retiradas
+    var retFiltrado=(resultados.ret.registros||[]).slice(0,5);
+    html+='<div>';
+    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Minhas retiradas</div>';
+    if(retFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhuma retirada registrada.</div>'; }
+    else {
+      html+='<div class="user-activity-list">';
+      retFiltrado.forEach(function(r){
+        html+='<div class="activity-item"><div class="activity-item-icon" style="background:#F0FDF4;">📤</div>'
+          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(r['CÓDIGO']||'—')+'</div>'
+          +'<div class="activity-item-meta">'+esc(r['DATA']||'—')+' · '+esc(r['DEPARTAMENTO']||'—')+'</div></div>'
+          +statusBadge(r['STATUS RETIRADA']||'PENDENTE')+'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+
+    document.getElementById('userAtividades').innerHTML = html;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(r){ resultados.arq=r; tentarRenderizar(); })
+    .withFailureHandler(function(){
+      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
+    })
+    .buscarHistorico('arquivamento', S.email);
+  google.script.run
+    .withSuccessHandler(function(r){ resultados.ret=r; tentarRenderizar(); })
+    .withFailureHandler(function(){
+      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
+    })
+    .buscarHistorico('retirada', S.email);
+}
+</script>

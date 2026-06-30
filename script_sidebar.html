@@ -1,0 +1,78 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════════════════════════════════
+var NAV_ADM = [
+  {label:'INÍCIO', items:[
+    {icon:'📊', nome:'Dashboard', id:'dash-adm', fn: function(){carregarDashAdm();}}
+  ]},
+  {label:'DOCUMENTOS', items:[
+    {icon:'🔍', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
+    {icon:'🗄', nome:'Arquivamento', id:'arquivar-adm', fn: function(){carregarArqAdm();}},
+    {icon:'📤', nome:'Retiradas', id:'retirada-adm', fn: function(){carregarRetiradasAdm('pendente');}},
+    {icon:'🗑', nome:'Descarte', id:'descarte', fn:null}
+  ]},
+  {label:'FERRAMENTAS', items:[
+    {icon:'📷', nome:'Digitalização', id:'digitalizacao', fn:null}
+  ]}
+];
+var NAV_USER = [
+  {label:'INÍCIO', items:[
+    {icon:'📊', nome:'Dashboard', id:'dash-user', fn: function(){carregarDashUser();}}
+  ]},
+  {label:'DOCUMENTOS', items:[
+    {icon:'🔍', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
+    {icon:'🗄', nome:'Arquivamento', id:'arquivar-user', fn: function(){carregarArqUser();}},
+    {icon:'📤', nome:'Retirada', id:'retirada-user', fn: function(){carregarDocsRetiradaUser();}},
+    {icon:'🗑', nome:'Descarte', id:'descarte', fn:null}
+  ]}
+];
+
+function montarSidebar() {
+  var nav = document.getElementById('sidebarNav');
+  var menus = S.perfil==='GED' ? NAV_ADM : NAV_USER;
+  nav.innerHTML='';
+  menus.forEach(function(g){
+    var lbl=document.createElement('div'); lbl.className='nav-label'; lbl.textContent=g.label;
+    nav.appendChild(lbl);
+    g.items.forEach(function(item){
+      var el=document.createElement('div'); el.className='nav-item'; el.id='nav-'+item.id;
+      el.innerHTML='<span class="nav-icon">'+item.icon+'</span>'+esc(item.nome);
+      el.addEventListener('click', function(){ navegar(item.id); if(item.fn) item.fn(); });
+      nav.appendChild(el);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════
+var TITULOS = {
+  'dash-adm':'Dashboard','dash-user':'Dashboard','consulta':'Consulta ao Acervo',
+  'arquivar-adm':'Arquivamento','arquivar-user':'Arquivamento',
+  'retirada-adm':'Retiradas','retirada-user':'Solicitar Retirada',
+  'descarte':'Descarte de Documentos','digitalizacao':'Digitalização'
+};
+function navegar(id) {
+  _paginaAtual=id;
+  document.querySelectorAll('.page').forEach(function(p){p.style.display='none';});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+id);
+  if(pg){ pg.style.display='block'; pg.style.animation='fadeIn .2s ease'; }
+  var ni=document.getElementById('nav-'+id); if(ni) ni.classList.add('active');
+  document.getElementById('topbarTitle').textContent=TITULOS[id]||id;
+  if(!S){location.reload();return;}
+  // guard ADM
+  var admOnly=['digitalizacao'];
+  if(admOnly.indexOf(id)!==-1 && S.perfil!=='GED'){navegar('dash-user');toast('Acesso restrito.','error');}
+}
+
+// Fechar sidebar mobile ao clicar fora dela
+document.addEventListener('click', function(e) {
+  var sidebar = document.getElementById('sidebar');
+  var hamburger = document.getElementById('hamburgerBtn');
+  if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== hamburger) {
+    sidebar.classList.remove('open');
+  }
+});
+</script>

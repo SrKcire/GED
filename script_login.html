@@ -1,0 +1,106 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════════════════
+document.getElementById('iSenha').addEventListener('keydown', function(e){ if(e.key==='Enter') fazerLogin(); });
+document.getElementById('iLogin').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('iSenha').focus(); });
+document.getElementById('btnEntrar').addEventListener('click', fazerLogin);
+document.getElementById('btnShowPwd').addEventListener('click', function(){
+  var i = document.getElementById('iSenha'); i.type = i.type==='password'?'text':'password';
+});
+
+function fazerLogin() {
+  var login = document.getElementById('iLogin').value.trim();
+  var senha = document.getElementById('iSenha').value;
+  var erroEl = document.getElementById('loginErro');
+  var btn = document.getElementById('btnEntrar');
+  if (!login||!senha) { erroEl.textContent='Preencha login e senha.'; erroEl.classList.add('show'); return; }
+  btn.disabled=true; btn.textContent='Verificando...'; erroEl.classList.remove('show');
+  google.script.run
+    .withSuccessHandler(function(r){
+      btn.disabled=false; btn.textContent='Entrar';
+      if (r.status==='ok') {
+        S = {nome:r.nome, email:r.email, perfil:r.perfil, departamento:r.departamento};
+        sessionStorage.setItem('ged_s', JSON.stringify(S));
+        if (r.precisaTrocarSenha) mostrarTrocaSenha();
+        else iniciarSistema();
+      } else if (r.status==='inativo') {
+        erroEl.textContent='Usuário inativo. Contate o GED.'; erroEl.classList.add('show');
+      } else if (r.status==='requer_migracao') {
+        erroEl.textContent='Este usuário administrador precisa de migração de senha. Contate o responsável técnico para executar a migração antes do login.'; erroEl.classList.add('show');
+      } else {
+        erroEl.textContent='Login ou senha incorretos.'; erroEl.classList.add('show');
+      }
+    })
+    .withFailureHandler(function(){
+      btn.disabled=false; btn.textContent='Entrar';
+      erroEl.textContent='Erro de conexão. Tente novamente.'; erroEl.classList.add('show');
+    })
+    .verificarLogin(login, senha);
+}
+
+function mostrarTrocaSenha() {
+  var m = document.getElementById('modalTrocaSenha'); m.style.display='flex';
+}
+function confirmarTrocaSenha() {
+  var atual=document.getElementById('tAtual').value,
+      nova=document.getElementById('tNova').value,
+      conf=document.getElementById('tConfirm').value,
+      erEl=document.getElementById('trocaErro');
+  erEl.style.display='none';
+  if (!atual||!nova||!conf){ erEl.textContent='Preencha todos os campos.'; erEl.style.display='block'; return; }
+  if (nova!==conf){ erEl.textContent='As senhas não coincidem.'; erEl.style.display='block'; return; }
+  if (nova.length<6){ erEl.textContent='Mínimo 6 caracteres.'; erEl.style.display='block'; return; }
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.sucesso){ document.getElementById('modalTrocaSenha').style.display='none'; iniciarSistema(); }
+      else { erEl.textContent=r.erro||'Erro.'; erEl.style.display='block'; }
+    })
+    .trocarSenha(S.email, atual, nova);
+}
+
+// ══════════════════════════════════════════════════════════
+//  INICIAR SISTEMA
+// ══════════════════════════════════════════════════════════
+function iniciarSistema() {
+  document.getElementById('telaLogin').style.display='none';
+  document.getElementById('loginAurora').style.display='none';
+  document.getElementById('loginNoise').style.display='none';
+  document.getElementById('sidebarAurora').style.display='';
+  var sys = document.getElementById('sistema');
+  sys.style.display='flex'; sys.style.minHeight='100vh';
+
+  document.getElementById('userNome').textContent = S.nome;
+  document.getElementById('userPerfil').textContent = S.perfil==='GED' ? 'Administrador GED' : (S.departamento||S.perfil);
+  document.getElementById('userAvatar').textContent = S.nome.charAt(0).toUpperCase();
+
+  var badge = document.getElementById('sidebarPerfilBadge');
+  if (S.perfil==='GED') { badge.textContent='🔑 Administrador GED'; badge.className='sidebar-perfil ged'; }
+  else { badge.textContent='👤 '+S.departamento; badge.className='sidebar-perfil user'; }
+
+  if (S.perfil!=='GED' && S.departamento) {
+    var d=document.getElementById('topbarDept'); d.textContent=S.departamento; d.style.display='';
+  }
+
+  montarSidebar();
+  document.getElementById('sidebarUserBtn').addEventListener('click', function(){
+    var p=document.getElementById('sairPanel'), c=document.getElementById('userChevron');
+    var open = p.style.maxHeight==='60px';
+    p.style.maxHeight=open?'0':'60px'; p.style.padding=open?'0 10px':'8px 10px';
+    c.style.transform=open?'':'rotate(180deg)';
+  });
+
+  if (S.perfil==='GED') { navegar('dash-adm'); carregarDashAdm(); }
+  else { navegar('dash-user'); carregarDashUser(); }
+}
+
+function fazerLogout() { sessionStorage.removeItem('ged_s'); S=null; location.reload(); }
+
+// ══════════════════════════════════════════════════════════
+//  RESTAURAR SESSÃO
+// ══════════════════════════════════════════════════════════
+(function(){
+  var raw=sessionStorage.getItem('ged_s');
+  if(raw){ try{ S=JSON.parse(raw); iniciarSistema(); } catch(e){ sessionStorage.removeItem('ged_s'); } }
+})();
+</script>

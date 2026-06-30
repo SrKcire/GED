@@ -1,0 +1,291 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  RETIRADA — ADM
+// ══════════════════════════════════════════════════════════
+function carregarRetiradasAdm(modo){
+  var setor=document.getElementById('retAdmSetor')?document.getElementById('retAdmSetor').value:'todos';
+  if(modo==='pendente'||modo==='historico'){
+    var wrapId=modo==='pendente'?'retAdmPendLista':'retAdmHistLista';
+    mostrarSpinner(wrapId);
+    google.script.run.withSuccessHandler(function(r){
+      var lotes=(r.lotes||[]).filter(function(l){
+        if(modo==='pendente') return l.statusRetirada==='PENDENTE'||l.statusRetirada==='LIBERADO';
+        return l.statusRetirada==='CANCELADO'||l.statusDevolucao==='DEVOLVIDO';
+      });
+      renderizarLotesRet(lotes,wrapId,modo);
+    }).getRetiradas(setor, S.email);
+  }
+}
+
+function renderizarLotesRet(lotes,wrapId,modo){
+  var wrap=document.getElementById(wrapId);
+  if(!lotes||lotes.length===0){
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhuma retirada encontrada.</p></div>';return;
+  }
+  wrap.innerHTML=lotes.map(function(l){
+    window._LOTES[l.codigo]=l;
+    return '<div class="lote-card" style="cursor:pointer;" onclick="abrirModalRetPendente(\''+escA(l.codigo)+'\')">'
+      +'<div class="lote-header">'
+        +'<div><div class="lote-cod">'+esc(l.codigo)+'</div><div class="lote-meta-text">'+esc(l.responsavel)+' · '+esc(l.departamento)+' · '+esc(l.data)+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:10px;">'+statusBadge(l.statusRetirada)+'<span style="color:var(--azul-escuro);font-size:.9rem;">›</span></div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function acaoRet(codigo,acao){
+  var lote=window._LOTES[codigo];
+  if(!lote){toast('Lote não encontrado. Atualize a lista.','error');return;}
+  var titulos={LIBERAR:'Liberar retirada',CANCELAR:'Cancelar retirada',ADIAR:'Adiar devolução',DEVOLVER:'Registrar devolução'};
+  var cores={LIBERAR:'verde',CANCELAR:'vermelho',ADIAR:'amarelo',DEVOLVER:'verde'};
+  var corpo='';
+  if(acao==='CANCELAR') corpo='<div style="margin-bottom:12px;"><div class="field-label">Motivo do cancelamento</div><textarea id="motRet" class="field-input" style="height:70px;padding:10px;" placeholder="Informe o motivo..."></textarea></div>';
+  if(acao==='ADIAR')    corpo='<div style="margin-bottom:12px;"><div class="field-label">Nova data de devolução</div><input type="date" id="dataAdiam" class="field-input"></div><div><div class="field-label">Justificativa</div><textarea id="justAdiam" class="field-input" style="height:60px;padding:10px;"></textarea></div>';
+
+  abrirModal(titulos[acao],'Lote: '+codigo,corpo,true,acao,cores[acao],function(){
+    var extra={email:lote.email,responsavel:lote.responsavel,departamento:lote.departamento,documentos:lote.documentos};
+    if(acao==='CANCELAR') extra.motivoCancelamento=document.getElementById('motRet')?document.getElementById('motRet').value:'';
+    if(acao==='ADIAR'){extra.dataFinal=document.getElementById('dataAdiam')?document.getElementById('dataAdiam').value:'';extra.justificativa=document.getElementById('justAdiam')?document.getElementById('justAdiam').value:'';}
+    google.script.run
+      .withSuccessHandler(function(r){
+        if(r.sucesso){toast('Ação registrada!','success');carregarRetiradasAdm('pendente');}
+        else toast(r.erro||'Erro.','error');
+      })
+      .withFailureHandler(function(){ toast('Erro de conexão.','error'); })
+      .atualizarStatusLote(codigo,acao,extra,S.email);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  RETIRADA — USUÁRIO V2
+// ══════════════════════════════════════════════════════════
+function switchRetUserTab(pane){
+  var sP=document.getElementById('ret-user-sol-pane');
+  var hP=document.getElementById('ret-user-hist-pane');
+  var tS=document.getElementById('tabRetUserSol');
+  var tH=document.getElementById('tabRetUserHist');
+  if(!sP||!hP) return;
+  if(pane==='sol'){
+    sP.style.display=''; hP.style.display='none';
+    if(tS){tS.classList.add('active','red');} if(tH){tH.classList.remove('active');}
+  } else {
+    sP.style.display='none'; hP.style.display='';
+    if(tH){tH.classList.add('active');} if(tS){tS.classList.remove('active','red');}
+  }
+}
+
+function carregarDocsRetiradaUser(){
+  var respEl=document.getElementById('retUserResp'); if(respEl&&S) respEl.value=S.nome;
+  var deptEl=document.getElementById('retUserDeptField'); if(deptEl&&S) deptEl.value=S.departamento||'';
+  var wrap=document.getElementById('retDocsLista');
+  if(wrap) wrap.innerHTML='<div class="loading"><div class="spinner"></div>Carregando documentos...</div>';
+  var countEl=document.getElementById('retDocCount'); if(countEl) countEl.textContent='';
+  var dept=S?S.departamento||'':'';
+  var mock=dept==='Infraestrutura'||(S&&S.perfil==='GED');
+  google.script.run.withSuccessHandler(function(r){
+    _retDocsCache=r.documentos||[];
+    renderizarDocsRetiradaUser();
+  }).buscarDocumentosRetirada(dept,mock);
+}
+
+function renderizarDocsRetiradaUser(){
+  var wrap=document.getElementById('retDocsLista');
+  var countEl=document.getElementById('retDocCount');
+  if(!_retDocsCache||_retDocsCache.length===0){
+    if(countEl) countEl.textContent='';
+    if(wrap) wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum documento disponível.</p></div>';
+    return;
+  }
+  var filterVal=(document.getElementById('retDocsFilter')||{}).value||'';
+  var lista=filterVal?_retDocsCache.filter(function(d){
+    var s=norm(d.descricao)+' '+norm(d.projeto||'')+' '+norm(String(d.caixa||''));
+    return norm(filterVal).split(' ').every(function(p){return s.includes(p);});
+  }):_retDocsCache;
+  if(countEl) countEl.textContent=_retDocsCache.length+' documento(s) disponíveis'+(filterVal?' · '+lista.length+' filtrado(s)':'');
+  if(!wrap) return;
+  if(lista.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Nenhum resultado para o filtro.</p></div>';return;}
+  wrap.innerHTML=lista.map(function(d,i){
+    var realIdx=_retDocsCache.indexOf(d);
+    var bloq=d.emRetirada;
+    var proj=d.projeto||'NÃO DEFINIDO';
+    return '<div class="doc-list-item '+(bloq?'bloqueado':'')+'">'
+      +'<input type="checkbox" class="doc-list-check" id="retDoc'+realIdx+'" '+(bloq?'disabled':'')+'>'
+      +'<div class="doc-list-icon">📄</div>'
+      +'<div class="doc-list-info">'
+        +'<div class="doc-list-name">'+esc(d.descricao)+'</div>'
+        +'<div class="doc-list-meta">'
+          +'<span><span style="background:#FEF3C7;color:#92400E;padding:1px 8px;border-radius:4px;font-size:.65rem;font-weight:700;font-family:\'Montserrat\',sans-serif;">'+esc(proj)+'</span></span>'
+          +'<span style="color:#92400E;font-size:.73rem;">📦 Caixa: '+esc(String(d.caixa||'—'))+'</span>'
+        +'</div>'
+      +'</div>'
+      +(bloq?'<span class="badge-status bs-em_andamento" style="font-size:.65rem;white-space:nowrap;">Em retirada</span>':'')
+      +'</div>';
+  }).join('');
+}
+
+function filtrarDocsRetUser(){ renderizarDocsRetiradaUser(); }
+
+function submeterRetirada(){
+  var motivo=document.getElementById('retMotivo').value.trim();
+  if(!motivo){toast('Informe o motivo da retirada.','error');return;}
+  var selecionados=_retDocsCache.filter(function(d,i){
+    var cb=document.getElementById('retDoc'+i); return cb&&cb.checked;
+  });
+  if(selecionados.length===0){toast('Selecione ao menos um documento.','error');return;}
+  var payload={responsavel:S.nome,email:S.email,departamento:S.departamento||'',motivo:motivo,documentos:selecionados};
+  document.getElementById('retUserMsg').textContent='Enviando...';
+  google.script.run
+    .withSuccessHandler(function(r){
+      document.getElementById('retUserMsg').textContent='';
+      if(r.sucesso){
+        toast('Retirada solicitada! Código: '+r.codigo,'success');
+        document.getElementById('retMotivo').value='';
+        carregarDocsRetiradaUser();
+      } else toast(r.erro||'Erro.','error');
+    })
+    .withFailureHandler(function(){
+      document.getElementById('retUserMsg').textContent='';
+      toast('Erro de conexão.','error');
+    })
+    .salvarRetirada(payload);
+}
+
+var _retHistLotesCache=[];
+function carregarHistRetiradaUser(){
+  var tbody=document.getElementById('retHistTableBody');
+  if(tbody) tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto 8px;"></div>Carregando...</td></tr>';
+  google.script.run.withSuccessHandler(function(r){
+    renderizarHistRetiradaUser(r);
+  }).buscarHistorico('retirada',S.email);
+}
+
+function renderizarHistRetiradaUser(r){
+  var regs=r.registros||[];
+  var lotes={};
+  regs.forEach(function(reg){
+    var codigo=reg['CÓDIGO']||'—';
+    if(!lotes[codigo]) lotes[codigo]={
+      codigo:codigo, data:reg['DATA']||'', status:reg['STATUS RETIRADA']||'PENDENTE',
+      statusDev:reg['STATUS DEVOLUÇÃO']||'', email:reg['EMAIL']||'',
+      responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
+      docs:[], caixas:[]
+    };
+    lotes[codigo].docs.push(reg['DESCRIÇÃO']||reg['DESCRIÇÃO / TIPO']||'—');
+    lotes[codigo].caixas.push(reg['CAIXA']||'—');
+  });
+  Object.values(lotes).forEach(function(l){ window._LOTES[l.codigo]=l; });
+  _retHistLotesCache=Object.values(lotes);
+  _renderizarRetHistTabela(_retHistLotesCache);
+}
+
+function _renderizarRetHistTabela(lotesArr){
+  var filterVal=(document.getElementById('retHistFilter')||{}).value||'';
+  var lista=filterVal?lotesArr.filter(function(l){
+    var s=norm(l.codigo)+' '+norm(l.data)+' '+norm(l.docs.join(' '))+' '+norm(l.status);
+    return norm(filterVal).split(' ').every(function(p){return s.includes(p);});
+  }):lotesArr;
+
+  var el=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  el('scRetSol',lotesArr.length);
+  el('scRetPend',lotesArr.filter(function(l){return l.status==='PENDENTE';}).length);
+  el('scRetLib',lotesArr.filter(function(l){return l.status==='LIBERADO';}).length);
+  el('scRetConc',lotesArr.filter(function(l){return l.statusDev==='DEVOLVIDO';}).length);
+
+  var tbody=document.getElementById('retHistTableBody');
+  var footer=document.getElementById('retHistTableFooter');
+  if(!tbody) return;
+  if(lista.length===0){
+    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
+    if(footer) footer.textContent='Mostrando 0-0 de 0 solicitação(ões)'; return;
+  }
+  tbody.innerHTML=lista.map(function(l){
+    return '<tr style="cursor:pointer;" onclick="abrirModalHistRetUser(\''+escA(l.codigo)+'\')">'
+      +'<td><span style="font-family:\'Montserrat\',sans-serif;font-weight:700;font-size:.82rem;color:var(--azul-escuro);">'+esc(l.codigo)+'</span></td>'
+      +'<td>'+esc(l.data)+'</td>'
+      +'<td>'+esc(l.docs[0])+(l.docs.length>1?' <span style="font-size:.7rem;color:#94a3b8;">+mais '+(l.docs.length-1)+'</span>':'')+'</td>'
+      +'<td>'+esc(l.caixas[0]||'—')+'</td>'
+      +'<td>'+statusBadge(l.status)+'</td>'
+      +'<td>'+(l.statusDev?statusBadge(l.statusDev):'<span style="color:#94a3b8;">—</span>')+'</td>'
+      +'</tr>';
+  }).join('');
+  if(footer) footer.textContent='Mostrando 1-'+lista.length+' de '+lotesArr.length+' solicitação(ões)';
+}
+
+function filtrarRetHistUser(){ _renderizarRetHistTabela(_retHistLotesCache); }
+
+function cancelarRetiradaUser(codigo){
+  var lote=window._LOTES[codigo];
+  abrirModal('Cancelar retirada','Lote: '+codigo,
+    '<div style="margin-bottom:12px;"><div class="field-label">Motivo do cancelamento</div><textarea id="motRetUser" class="field-input" style="height:70px;padding:10px;" placeholder="Informe o motivo (opcional)..."></textarea></div>',
+    true,'Confirmar cancelamento','vermelho',function(){
+      var mot=document.getElementById('motRetUser')?document.getElementById('motRetUser').value:'';
+      var extra={
+        email:        lote ? lote.email        : S.email,
+        responsavel:  lote ? lote.responsavel  : S.nome,
+        departamento: lote ? lote.departamento : S.departamento,
+        motivoCancelamento: mot
+      };
+      google.script.run
+        .withSuccessHandler(function(r){
+          if(r.sucesso){toast('Retirada cancelada.','info');carregarHistRetiradaUser();}
+          else toast(r.erro||'Erro.','error');
+        })
+        .withFailureHandler(function(){ toast('Erro de conexão.','error'); })
+        .atualizarStatusLote(codigo,'CANCELAR',extra,S.email);
+    });
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL SOLICITAÇÃO DE RETIRADA (PENDENTE / HISTÓRICO ADM)
+// ══════════════════════════════════════════════════════════
+function abrirModalRetPendente(codigo) {
+  var l = window._LOTES[codigo];
+  if (!l) { toast('Lote não encontrado. Atualize a lista.', 'error'); return; }
+  var docs = l.documentos.map(function(d) {
+    return '<tr><td>'+esc(d.projeto)+'</td><td>'+esc(d.descricao)+'</td><td>'+esc(d.caixa)+'</td></tr>';
+  }).join('');
+  var acoes = '';
+  if (l.statusRetirada === 'PENDENTE') {
+    acoes = '<button class="btn-acao btn-liberar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'LIBERAR\')">✅ Liberar</button>'
+      +'<button class="btn-acao btn-cancelar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'CANCELAR\')">✕ Cancelar</button>';
+  } else if (l.statusRetirada === 'LIBERADO' && l.statusDevolucao === 'PENDENTE') {
+    acoes = '<button class="btn-acao btn-devolver" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'DEVOLVER\')">↩ Registrar devolução</button>'
+      +'<button class="btn-acao btn-adiar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'ADIAR\')">📅 Adiar</button>';
+  }
+  var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    +'<div><div class="field-label">Responsável</div><div style="font-size:.88rem;font-weight:600;color:var(--texto);">'+esc(l.responsavel)+'</div></div>'
+    +'<div><div class="field-label">Departamento</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.departamento)+'</div></div>'
+    +'<div><div class="field-label">Data</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.data)+'</div></div>'
+    +'<div><div class="field-label">Status Retirada</div>'+statusBadge(l.statusRetirada)+'</div>'
+    +(l.statusDevolucao?'<div><div class="field-label">Status Devolução</div>'+statusBadge(l.statusDevolucao)+'</div>':'')
+    +(l.motivo?'<div style="grid-column:1/-1;"><div class="field-label">Motivo</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.motivo)+'</div></div>':'')
+    +'</div>'
+    +'<div style="overflow-x:auto;margin-bottom:16px;">'
+    +'<table class="lote-docs-table"><thead><tr><th>Projeto</th><th>Descrição</th><th>Caixa</th></tr></thead>'
+    +'<tbody>'+docs+'</tbody></table>'
+    +'</div>'
+    +(acoes?'<div style="display:flex;gap:10px;flex-wrap:wrap;">'+acoes+'</div>':'');
+  abrirModal('Solicitação de Retirada', codigo, corpo, false);
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL HISTÓRICO DE RETIRADAS (USUÁRIO)
+// ══════════════════════════════════════════════════════════
+function abrirModalHistRetUser(cod) {
+  var l = window._LOTES[cod];
+  if (!l) return;
+  var podeCancelar = l.status === 'PENDENTE';
+  var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    +'<div><div class="field-label">Data</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.data)+'</div></div>'
+    +'<div><div class="field-label">Status Retirada</div>'+statusBadge(l.status)+'</div>'
+    +(l.statusDev?'<div><div class="field-label">Status Devolução</div>'+statusBadge(l.statusDev)+'</div>':'')
+    +'</div>'
+    +'<div><div class="field-label" style="margin-bottom:8px;">Documentos</div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px;">'
+    +l.docs.map(function(d){ return '<div style="font-size:.83rem;color:var(--texto);padding:5px 10px;background:#f8fafc;border-radius:6px;">'+esc(d)+'</div>'; }).join('')
+    +'</div></div>';
+  abrirModal('Retirada', l.codigo, corpo,
+    podeCancelar, 'Cancelar retirada', 'vermelho',
+    podeCancelar ? function(){ cancelarRetiradaUser(l.codigo); } : null);
+}
+</script>

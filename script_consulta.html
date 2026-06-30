@@ -1,0 +1,139 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONSULTA — busca unificada físico + digital
+// ══════════════════════════════════════════════════════════
+function prepararConsulta() {
+  var sub = document.getElementById('consultaSubtitle');
+  if(S.perfil!=='GED') sub.textContent='Você pode buscar apenas documentos do departamento '+S.departamento+'.';
+  else sub.textContent='Busque documentos físicos e digitais em todo o acervo.';
+}
+
+var _consultaPag=1, _consultaTermo='', _consultaTipo='', _consultaResultados=[];
+
+function buscarConsulta(pag) {
+  pag=pag||1; _consultaPag=pag;
+  var termo=document.getElementById('consultaInput').value.trim();
+  _consultaTermo=termo;
+  _consultaTipo='';
+  var clearBtn=document.getElementById('consultaClearBtn');
+  clearBtn.style.display=termo?'':'none';
+
+  mostrarSpinner('consultaResultados');
+  document.getElementById('consultaPaginacao').innerHTML='';
+
+  var dept=(S.perfil!=='GED')?S.departamento:'';
+  var resultados={fisico:null,digital:null};
+
+  function cruzar(){
+    if(resultados.fisico===null||resultados.digital===null) return;
+
+    // Índice de nomes digitais (normalizados)
+    var digitaisMap={};
+    (resultados.digital.resultados||[]).forEach(function(d){
+      digitaisMap[norm(d.nome)]=d;
+    });
+
+    // Índice de nomes físicos
+    var fisicosMap={};
+    (resultados.fisico.documentos||[]).forEach(function(f){
+      fisicosMap[norm(f.descricao)]=f;
+    });
+
+    // Construir lista unificada
+    var vistos={};
+    var lista=[];
+
+    // Primeiro: todos os digitais
+    (resultados.digital.resultados||[]).forEach(function(d){
+      var n=norm(d.nome);
+      if(vistos[n]) return;
+      vistos[n]=true;
+      var temFisico=!!fisicosMap[n];
+      lista.push({nome:d.nome,url:d.url,data:d.data,pasta:d.pasta,tipo:temFisico?'ambos':'digital',fisico:fisicosMap[n]||null});
+    });
+
+    // Depois: físicos que não estão no digital
+    (resultados.fisico.documentos||[]).forEach(function(f){
+      var n=norm(f.descricao);
+      if(vistos[n]) return;
+      vistos[n]=true;
+      lista.push({nome:f.descricao,url:'',data:'',pasta:f.projeto||'',tipo:'fisico',fisico:f});
+    });
+
+    // Filtrar por termo
+    if(termo){
+      var palavras=norm(termo).split(/\s+/).filter(Boolean);
+      lista=lista.filter(function(item){
+        var n2=norm(item.nome);
+        return palavras.every(function(p){return n2.includes(p);});
+      });
+    }
+
+    // Filtrar por tipo
+    if(_consultaTipo){ lista=lista.filter(function(item){return item.tipo===_consultaTipo;}); }
+
+    _consultaResultados=lista;
+    renderizarConsulta(pag);
+  }
+
+  // Busca digital (Índice Drive)
+  google.script.run.withSuccessHandler(function(r){ resultados.digital=r; cruzar(); })
+    .buscarDocumentos(termo, 1, ''); // ADM sempre busca tudo; usuário filtrado no backend
+
+  // Busca física (acervo do dept) — função dedicada à consulta, sem filtro de bloqueio de retirada
+  google.script.run.withSuccessHandler(function(r){ resultados.fisico=r; cruzar(); })
+    .buscarAcervoFisicoConsulta(dept, S.departamento==='Infraestrutura'||S.perfil==='GED');
+}
+
+function renderizarConsulta(pag) {
+  var wrap=document.getElementById('consultaResultados');
+  var pagEl=document.getElementById('consultaPaginacao');
+  var por=20, inicio=(pag-1)*por;
+  var slice=_consultaResultados.slice(inicio,inicio+por);
+  var total=_consultaResultados.length;
+
+  if(total===0){
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>'+(_consultaTermo?'Nenhum resultado para "'+esc(_consultaTermo)+'".':'Digite um termo para buscar.')+'</p></div>';
+    pagEl.innerHTML=''; return;
+  }
+
+  wrap.innerHTML=slice.map(function(d){
+    return '<div class="result-card">'
+      +'<div class="result-icon">'+(d.tipo==='digital'?'💻':d.tipo==='ambos'?'📎':'📦')+'</div>'
+      +'<div class="result-info">'
+        +'<div class="result-nome">'+esc(d.nome)+'</div>'
+        +'<div class="result-meta">'
+          +tagTipo(d.tipo)
+          +(d.pasta&&d.tipo!=='digital'?'<span>📁 '+esc(d.pasta)+'</span>':'')
+          +(d.data?'<span>📅 '+esc(d.data)+'</span>':'')
+          +(d.fisico?'<span>📦 Cx. '+esc(d.fisico.caixa||'—')+'</span>':'')
+        +'</div>'
+      +'</div>'
+      +(d.url?'<button onclick="abrirPreviewDocumento(\''+escA(d.url)+'\',\''+escA(d.nome)+'\')" style="flex-shrink:0;height:32px;padding:0 14px;background:var(--azul-escuro);color:#fff;border:none;border-radius:7px;font-family:\'Montserrat\',sans-serif;font-size:.73rem;font-weight:700;cursor:pointer;">Abrir</button>':'')
+      +'</div>';
+  }).join('');
+
+  // Paginação
+  var totalPg=Math.ceil(total/por);
+  if(totalPg>1){
+    var p='<div style="display:flex;gap:6px;align-items:center;">';
+    p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===1?'disabled':'')+' onclick="renderizarConsulta('+(pag-1)+')">‹</button>';
+    for(var i=Math.max(1,pag-2);i<=Math.min(totalPg,pag+2);i++){
+      p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid '+(i===pag?'var(--azul-escuro)':'var(--cinza-borda)')+';background:'+(i===pag?'var(--azul-escuro)':'#fff')+';color:'+(i===pag?'#fff':'var(--texto-leve)')+';cursor:pointer;font-size:.8rem;font-weight:700;" onclick="renderizarConsulta('+i+')">'+i+'</button>';
+    }
+    p+='<button style="width:32px;height:32px;border-radius:7px;border:1.5px solid var(--cinza-borda);background:#fff;cursor:pointer;font-size:.8rem;" '+(pag===totalPg?'disabled':'')+' onclick="renderizarConsulta('+(pag+1)+')">›</button>';
+    p+='</div><p style="text-align:center;font-size:.73rem;color:var(--texto-leve);margin-top:6px;">'+total+' resultado(s)</p>';
+    pagEl.innerHTML=p;
+  } else {
+    pagEl.innerHTML='<p style="text-align:center;font-size:.73rem;color:var(--texto-leve);">'+total+' resultado(s)</p>';
+  }
+}
+
+function limparConsulta(){
+  document.getElementById('consultaInput').value='';
+  document.getElementById('consultaClearBtn').style.display='none';
+  document.getElementById('consultaResultados').innerHTML='';
+  document.getElementById('consultaPaginacao').innerHTML='';
+  _consultaResultados=[];
+}
+</script>

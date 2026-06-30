@@ -1,0 +1,506 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  TIPOS DE DOCUMENTO POR DEPARTAMENTO
+// ══════════════════════════════════════════════════════════
+var TIPOS_DEPT = {
+  'Infraestrutura': [
+    {id:'1', nome:'Solicitação de Material', sub:'Ordens de compra, cotações, pedidos'},
+    {id:'2', nome:'Documentos Gerais',       sub:'Relatórios, atas, ofícios'},
+    {id:'3', nome:'Contratos',               sub:'Contratos com data de vencimento'},
+    {id:'6', nome:'Documentos com Projeto',  sub:'Associados a um projeto específico'},
+    {id:'7', nome:'Documentos Simples',      sub:'Sem projeto ou vencimento'}
+  ]
+  // Outros departamentos serão adicionados aqui conforme definição
+};
+
+var ICONS_TIPO = {
+  '1':'📋','2':'📁','3':'📝','6':'🗂','7':'📄','_generico':'📄'
+};
+
+// ══════════════════════════════════════════════════════════
+//  ARQUIVAMENTO — FORM COMPARTILHADO
+// ══════════════════════════════════════════════════════════
+var _arqTipo='', _arqDept='';
+
+function renderizarFormArquivamento(wrapId) {
+  var dept = _arqDept;
+  var tiposDept = TIPOS_DEPT[dept];
+  var wrap = document.getElementById(wrapId);
+
+  if(tiposDept) {
+    // Departamento com tipos definidos — mostrar seleção de tipo
+    var html='<div style="margin-bottom:18px;">'
+      +'<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Tipo de documento</div>'
+      +'<div class="tipo-docs-grid">';
+    tiposDept.forEach(function(t){
+      html+='<div class="tipo-doc-card" id="tipo-card-'+t.id+'" onclick="selecionarTipo(\''+t.id+'\')">'
+        +'<span class="tipo-doc-icon">'+(ICONS_TIPO[t.id]||'📄')+'</span>'
+        +'<div><div class="tipo-doc-nome">'+esc(t.nome)+'</div><div class="tipo-doc-sub">'+esc(t.sub)+'</div></div>'
+        +'</div>';
+    });
+    html+='</div></div>';
+    html+='<div id="arqFormLinhas" style="display:none;"></div>';
+    wrap.innerHTML=html;
+  } else {
+    // Departamento sem tipos definidos — formulário genérico
+    wrap.innerHTML='<div id="arqFormLinhas"></div>';
+    _arqTipo='_generico';
+    renderizarLinhasForm();
+    document.getElementById('arqFormLinhas').style.display='';
+  }
+}
+
+function selecionarTipo(tipoId) {
+  _arqTipo=tipoId;
+  document.querySelectorAll('.tipo-doc-card').forEach(function(c){c.classList.remove('selected');});
+  var el=document.getElementById('tipo-card-'+tipoId); if(el) el.classList.add('selected');
+  document.getElementById('arqFormLinhas').style.display='';
+  renderizarLinhasForm();
+}
+
+function renderizarLinhasForm() {
+  var tipo=_arqTipo;
+  var dept=_arqDept;
+  var wrap=document.getElementById('arqFormLinhas');
+
+  var cabecalho='', addLabel='Adicionar documento';
+  if(tipo==='1'){
+    cabecalho='<div class="doc-row cols-5" style="margin-bottom:6px;">'
+      +'<div class="field-label">ID da Solicitação</div>'
+      +'<div class="field-label">Tipo</div>'
+      +'<div class="field-label">Data do Documento</div>'
+      +'<div class="field-label">Setor</div>'
+      +'<div class="field-label">Área</div>'
+      +'<div></div></div>';
+  } else if(tipo==='3'){
+    cabecalho='<div class="doc-row cols-4" style="margin-bottom:6px;">'
+      +'<div class="field-label">Descrição</div>'
+      +'<div class="field-label">Data do Documento</div>'
+      +'<div class="field-label">Data de Vencimento</div>'
+      +'<div class="field-label">Projeto</div>'
+      +'<div></div></div>';
+  } else if(tipo==='7'){
+    cabecalho='<div class="doc-row cols-2" style="margin-bottom:6px;">'
+      +'<div class="field-label">Descrição</div>'
+      +'<div class="field-label">Data do Documento</div>'
+      +'<div></div></div>';
+  } else if(tipo==='_generico'){
+    cabecalho='<div class="doc-row cols-3" style="margin-bottom:6px;">'
+      +'<div class="field-label">Descrição do documento</div>'
+      +'<div class="field-label">Data do Documento</div>'
+      +'<div class="field-label">Informação / Projeto</div>'
+      +'<div></div></div>';
+  } else {
+    cabecalho='<div class="doc-row cols-3" style="margin-bottom:6px;">'
+      +'<div class="field-label">Descrição</div>'
+      +'<div class="field-label">Data do Documento</div>'
+      +'<div class="field-label">Projeto</div>'
+      +'<div></div></div>';
+  }
+
+  var deptField = '<div><div class="field-label">Departamento</div><div style="height:38px;padding:0 11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;color:var(--texto-leve);background:#f8fafc;display:flex;align-items:center;">'+esc(dept)+'</div></div>';
+
+  wrap.innerHTML='<div class="form-section">'
+    +'<div class="form-section-title">📄 Documentos</div>'
+    +cabecalho
+    +'<div id="arqLinhasBody"></div>'
+    +'<button class="btn-add-row" onclick="addLinhaArq()">＋ Adicionar linha</button>'
+    +'</div>'
+    +'<div class="form-section">'
+    +'<div class="form-section-title">👤 Solicitante</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +'<div><div class="field-label">Responsável</div><input class="field-input" id="arqResp" value="'+escA(S.nome)+'" readonly></div>'
+    +deptField
+    +'</div></div>'
+    +'<div style="display:flex;gap:12px;align-items:center;">'
+    +'<button class="btn-primary" id="btnArqSubmit" onclick="submeterArquivamento()">Enviar solicitação</button>'
+    +'<span id="arqMsg" style="font-size:.82rem;color:var(--texto-leve);"></span>'
+    +'</div>';
+  addLinhaArq();
+}
+
+function addLinhaArq(){
+  var body=document.getElementById('arqLinhasBody'); if(!body) return;
+  var tipo=_arqTipo;
+  var div=document.createElement('div'); div.className='doc-row';
+  var inp=function(ph,cls){ return '<div><input class="field-input '+(cls||'')+'" placeholder="'+escA(ph)+'"></div>'; };
+  var sel=function(opts){ return '<div><select class="field-select">'+opts.map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select></div>'; };
+  var rm='<button class="btn-rm" onclick="this.closest(\'.doc-row\').remove()">✕</button>';
+
+  if(tipo==='1'){
+    div.classList.add('cols-5');
+    div.innerHTML=inp('ID da Solicitação')+sel(['Nota Fiscal','Pedido','Cotação','Contrato','Outro'])+inp('AAAA-MM-DD')+inp('Setor')+inp('Área')+rm;
+  } else if(tipo==='3'){
+    div.classList.add('cols-4');
+    div.innerHTML=inp('Descrição')+inp('AAAA-MM-DD')+inp('Data de Vencimento')+inp('Projeto')+rm;
+  } else if(tipo==='7'){
+    div.classList.add('cols-2');
+    div.innerHTML=inp('Descrição')+inp('AAAA-MM-DD')+rm;
+  } else if(tipo==='_generico'){
+    div.classList.add('cols-3');
+    div.innerHTML=inp('Descrição do documento')+inp('AAAA-MM-DD')+inp('Informação / Projeto')+rm;
+  } else {
+    div.classList.add('cols-3');
+    div.innerHTML=inp('Descrição')+inp('AAAA-MM-DD')+inp('Projeto')+rm;
+  }
+  body.appendChild(div);
+}
+
+function coletarLinhasArq(){
+  var tipo=_arqTipo;
+  var rows=document.querySelectorAll('#arqLinhasBody .doc-row');
+  var docs=[];
+  rows.forEach(function(r){
+    var inputs=r.querySelectorAll('input,select');
+    var vals=Array.from(inputs).map(function(i){return i.value.trim();});
+    if(tipo==='1'&&vals[0]){
+      docs.push({id:vals[0],tipoSolicitacao:vals[1],dataDoc:vals[2],setor:vals[3],area:vals[4]});
+    } else if(tipo==='3'&&vals[0]){
+      docs.push({nome:vals[0],dataDoc:vals[1],dataVencimento:vals[2],projeto:vals[3]});
+    } else if(tipo==='7'&&vals[0]){
+      docs.push({nome:vals[0],dataDoc:vals[1]});
+    } else if(tipo==='_generico'&&vals[0]){
+      docs.push({nome:vals[0],dataDoc:vals[1],projeto:vals[2]});
+    } else if(vals[0]){
+      docs.push({nome:vals[0],dataDoc:vals[1],projeto:vals[2]});
+    }
+  });
+  return docs;
+}
+
+function submeterArquivamento(){
+  var docs=coletarLinhasArq();
+  if(!docs||docs.length===0){toast('Adicione pelo menos um documento.','error');return;}
+  document.getElementById('btnArqSubmit').disabled=true;
+  document.getElementById('arqMsg').textContent='Enviando...';
+  var payload={tipo:_arqTipo,responsavel:S.nome,email:S.email,departamento:_arqDept,documentos:docs};
+  google.script.run
+    .withSuccessHandler(function(r){
+      document.getElementById('btnArqSubmit').disabled=false;
+      document.getElementById('arqMsg').textContent='';
+      if(r.sucesso){
+        toast('Solicitação enviada! Código: '+r.codigo,'success');
+        document.getElementById('arqLinhasBody').innerHTML=''; addLinhaArq();
+      } else { toast(r.erro||'Erro ao enviar.','error'); }
+    })
+    .withFailureHandler(function(){
+      document.getElementById('btnArqSubmit').disabled=false;
+      document.getElementById('arqMsg').textContent='';
+      toast('Erro de conexão.','error');
+    })
+    .salvarDados(payload);
+}
+
+// ── ARQ ADM ──
+function carregarArqAdm(){
+  mostrarSpinner('arqAdmLista');
+
+  var depts=['Infraestrutura','Administrativo','Financeiro','RH','Pedagógico','Comunicação','TI'];
+  var admWrap=document.getElementById('arqAdmFormWrap');
+  admWrap.innerHTML='<div id="arqFormLinhas"></div>';
+  _arqDept=S.departamento||depts[0];
+  _arqTipo='_generico';
+  renderizarLinhasForm();
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      renderizarArqAdmLista(r.lotes||[]);
+    })
+    .withFailureHandler(function(){
+      document.getElementById('arqAdmLista').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar solicitações. Tente novamente.</p></div>';
+    })
+    .getArquivamentos('pendentes', S.email);
+}
+
+function trocarDeptArqAdm(dept){
+  _arqDept=dept;
+  document.getElementById('arqFormLinhas').innerHTML='';
+  renderizarLinhasForm();
+}
+
+function renderizarArqAdmLista(lotes){
+  var wrap=document.getElementById('arqAdmLista');
+  if(!lotes||lotes.length===0){
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><p>Nenhuma solicitação pendente.</p></div>';return;
+  }
+  wrap.innerHTML=lotes.map(function(l){
+    window._LOTES[l.codigo]=l;
+    return '<div class="lote-card" style="cursor:pointer;" onclick="abrirModalArqPendente(\''+escA(l.codigo)+'\')">'
+      +'<div class="lote-header">'
+        +'<div><div class="lote-cod">'+esc(l.codigo)+'</div><div class="lote-meta-text">'+esc(l.responsavel)+' · '+esc(l.departamento)+' · '+esc(l.data)+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:10px;">'+statusBadge(l.status||'PENDENTE')+'<span style="color:var(--azul-escuro);font-size:.9rem;">›</span></div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function aprovarLoteArq(codigo){
+  var lote=window._LOTES[codigo];
+  if(!lote){toast('Lote não encontrado. Atualize a lista.','error');return;}
+  var docs=lote.documentos.map(function(d,di){
+    var key=codigo+'_'+di;
+    var cxEl=document.getElementById('cx_'+key);
+    var tEl=document.getElementById('temp_'+key);
+    var aEl=document.getElementById('area_'+key);
+    return Object.assign({},d,{
+      caixa:cxEl?cxEl.value.trim():d.caixa,
+      temporalidade:tEl?tEl.value.trim():d.temporalidade,
+      area:aEl?aEl.value.trim():d.area
+    });
+  });
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.ok){toast('Arquivamento aprovado!','success');carregarArqAdm();}
+      else toast(r.erro||'Erro.','error');
+    })
+    .withFailureHandler(function(){ toast('Erro de conexão ao aprovar.','error'); })
+    .aprovarArquivamento(codigo,docs,S.email);
+}
+
+function cancelarLoteArq(codigo){
+  abrirModal('Cancelar arquivamento','Lote: '+codigo,
+    '<div style="margin-bottom:12px;"><div class="field-label">Motivo</div><textarea id="motCancArq" class="field-input" style="height:70px;padding:10px;" placeholder="Informe o motivo..."></textarea></div>',
+    true,'Cancelar lote','vermelho',function(){
+      var mot=document.getElementById('motCancArq')?document.getElementById('motCancArq').value:'';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if(r.ok){toast('Cancelado.','info');carregarArqAdm();}
+          else toast(r.erro||'Erro.','error');
+        })
+        .withFailureHandler(function(){ toast('Erro de conexão ao cancelar.','error'); })
+        .cancelarArquivamento(codigo,mot,S.email);
+    });
+}
+
+function copiarCxAcima(key){
+  var partes=key.split('_'); var di=parseInt(partes[partes.length-1]);
+  if(di<1)return;
+  var prev=partes.slice(0,-1).join('_')+'_'+(di-1);
+  var pEl=document.getElementById('cx_'+prev); var cEl=document.getElementById('cx_'+key);
+  if(pEl&&cEl) cEl.value=pEl.value;
+}
+
+// ── ARQ USUÁRIO V2 ──
+function switchArqUserTab(pane){
+  var fP=document.getElementById('arq-user-form-pane');
+  var hP=document.getElementById('arq-user-hist-pane');
+  var tF=document.getElementById('tabArqUserForm');
+  var tH=document.getElementById('tabArqUserHist');
+  if(!fP||!hP) return;
+  if(pane==='form'){
+    fP.style.display=''; hP.style.display='none';
+    if(tF){tF.classList.add('active','gold');} if(tH){tH.classList.remove('active');}
+  } else {
+    fP.style.display='none'; hP.style.display='';
+    if(tH){tH.classList.add('active');} if(tF){tF.classList.remove('active','gold');}
+  }
+}
+
+function carregarArqUser(){
+  _arqDept=S.departamento||'';
+  _arqTipo='';
+  var respEl=document.getElementById('arqUserResp');
+  var deptEl=document.getElementById('arqUserDept');
+  if(respEl) respEl.value=S.nome;
+  if(deptEl) deptEl.value=_arqDept;
+  var sel=document.getElementById('arqUserTipo');
+  if(sel){
+    var tipos=TIPOS_DEPT[_arqDept];
+    sel.innerHTML='<option value="">— Selecione o tipo —</option>';
+    if(tipos){ tipos.forEach(function(t){ sel.innerHTML+='<option value="'+escA(t.id)+'">'+esc(t.nome)+'</option>'; }); }
+    else { sel.innerHTML+='<option value="_generico">Documento Geral</option>'; }
+  }
+  var da=document.getElementById('arqUserDocsArea');
+  if(da) da.innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8;"><div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">📄</div><p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p></div>';
+  var sa=document.getElementById('arqUserSubmitArea'); if(sa) sa.style.display='none';
+}
+
+function adicionarLinhasArqUser(){
+  var tipoId=document.getElementById('arqUserTipo')?document.getElementById('arqUserTipo').value:'';
+  if(!tipoId){toast('Selecione o tipo de documento.','error');return;}
+  var qtd=parseInt((document.getElementById('arqUserQtd')||{}).value)||1;
+  if(qtd<1||qtd>50){toast('Quantidade deve ser entre 1 e 50.','error');return;}
+  _arqTipo=tipoId;
+  var docsArea=document.getElementById('arqUserDocsArea');
+  if(!document.getElementById('arqLinhasBody')){
+    docsArea.innerHTML='<div class="section-card" style="padding:16px 18px;">'
+      +'<div class="section-label" style="margin-bottom:12px;">Documentos</div>'
+      +'<div id="arqLinhasBody"></div>'
+      +'<button class="btn-add-row" onclick="addLinhaArq()" style="margin-top:8px;">＋ Adicionar linha</button>'
+      +'</div>';
+  }
+  for(var i=0;i<qtd;i++) addLinhaArq();
+  var sa=document.getElementById('arqUserSubmitArea'); if(sa) sa.style.display='';
+}
+
+function submeterArquivamentoUser(){
+  var docs=coletarLinhasArq();
+  if(!docs||docs.length===0){toast('Adicione pelo menos um documento.','error');return;}
+  var btn=document.getElementById('btnArqUserSubmit'); if(btn) btn.disabled=true;
+  var payload={tipo:_arqTipo,responsavel:S.nome,email:S.email,departamento:_arqDept,documentos:docs};
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(btn) btn.disabled=false;
+      if(r.sucesso){
+        toast('Solicitação enviada! Código: '+r.codigo,'success');
+        carregarArqUser();
+      } else toast(r.erro||'Erro ao enviar.','error');
+    })
+    .withFailureHandler(function(){ if(btn) btn.disabled=false; toast('Erro de conexão.','error'); })
+    .salvarDados(payload);
+}
+
+// ── HISTÓRICO ARQ ──
+var _arqHistLotesCache=[];
+function carregarHistArq(perfil){
+  if(perfil==='adm'){
+    mostrarSpinner('arqAdmHistLista');
+    google.script.run.withSuccessHandler(function(r){ renderizarHistArq(r,'arqAdmHistLista','adm'); }).buscarHistorico('arquivamento','');
+  } else {
+    var tbody=document.getElementById('arqHistTableBody');
+    if(tbody) tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto 8px;"></div>Carregando...</td></tr>';
+    google.script.run.withSuccessHandler(function(r){ renderizarHistArq(r,'','user'); }).buscarHistorico('arquivamento',S.email);
+  }
+}
+
+function renderizarHistArq(r,wrapId,perfil){
+  var regs=r.registros||[];
+  var lotes={};
+  regs.forEach(function(reg){
+    var codigo=reg['CÓDIGO']||'—';
+    if(!lotes[codigo]) lotes[codigo]={codigo:codigo,data:reg['DATA']||'',resp:reg['RESPONSÁVEL']||'',dept:reg['DEPARTAMENTO']||'',status:reg['STATUS']||'PENDENTE',docs:[]};
+    lotes[codigo].docs.push(reg['DESCRIÇÃO / TIPO']||reg['ID']||'—');
+  });
+  Object.values(lotes).forEach(function(l){ window._LOTES[l.codigo]=l; });
+  var lotesArr=Object.values(lotes);
+
+  if(perfil==='user'){
+    _arqHistLotesCache=lotesArr;
+    _renderizarArqHistTabela(lotesArr);
+    return;
+  }
+  // ADM — card list
+  var wrap=document.getElementById(wrapId); if(!wrap) return;
+  if(lotesArr.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📁</div><p>Nenhum registro encontrado.</p></div>';return;}
+  wrap.innerHTML='<div class="hist-list">'+lotesArr.map(function(l){
+    return '<div class="hist-card" style="cursor:pointer;" onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')">'
+      +'<div class="hist-card-header"><span class="hist-card-cod">'+esc(l.codigo)+'</span>'+statusBadge(l.status)+'</div>'
+      +'<div class="hist-card-meta">'+esc(l.data)+' · '+esc(l.resp)+' · '+esc(l.dept)+'</div>'
+      +'<div class="hist-card-docs">'+esc(l.docs.slice(0,3).join(', '))+(l.docs.length>3?' +mais...':'')+'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+
+function _renderizarArqHistTabela(lotesArr){
+  var filterVal=(document.getElementById('arqHistFilter')||{}).value||'';
+  var lista=filterVal?lotesArr.filter(function(l){
+    var s=norm(l.codigo)+' '+norm(l.data)+' '+norm(l.docs.join(' '));
+    return norm(filterVal).split(' ').every(function(p){return s.includes(p);});
+  }):lotesArr;
+  var scOps=document.getElementById('scArqOps'); if(scOps) scOps.textContent=lotesArr.length;
+  var scDocs=document.getElementById('scArqDocs'); if(scDocs) scDocs.textContent=lotesArr.reduce(function(acc,l){return acc+l.docs.length;},0);
+  var tbody=document.getElementById('arqHistTableBody'); if(!tbody) return;
+  var footer=document.getElementById('arqHistTableFooter');
+  if(lista.length===0){
+    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
+    if(footer) footer.textContent='Mostrando 0-0 de 0 operação(ões)'; return;
+  }
+  tbody.innerHTML=lista.map(function(l){
+    return '<tr>'
+      +'<td><span style="font-family:\'Montserrat\',sans-serif;font-weight:700;font-size:.82rem;color:var(--azul-escuro);">'+esc(l.codigo)+'</span></td>'
+      +'<td>'+esc(l.data)+'</td>'
+      +'<td>'+esc(l.docs[0])+(l.docs.length>1?' <span style="font-size:.7rem;color:#94a3b8;">+mais '+(l.docs.length-1)+'</span>':'')+'</td>'
+      +'<td style="font-family:\'Montserrat\',sans-serif;font-weight:700;color:var(--azul-escuro);">'+l.docs.length+'</td>'
+      +'<td>'+statusBadge(l.status)+'</td>'
+      +'<td><button onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')" style="height:28px;padding:0 12px;background:#EFF6FF;color:var(--azul-escuro);border:1px solid #BFDBFE;border-radius:6px;font-size:.73rem;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">Ver</button></td>'
+      +'</tr>';
+  }).join('');
+  if(footer) footer.textContent='Mostrando 1-'+lista.length+' de '+lotesArr.length+' operação(ões)';
+}
+
+function filtrarArqHistUser(){ _renderizarArqHistTabela(_arqHistLotesCache); }
+
+// ══════════════════════════════════════════════════════════
+//  MODAL SOLICITAÇÃO DE ARQUIVAMENTO (PENDENTE)
+// ══════════════════════════════════════════════════════════
+function abrirModalArqPendente(codigo) {
+  var l = window._LOTES[codigo];
+  if (!l) { toast('Lote não encontrado. Atualize a lista.', 'error'); return; }
+  var isSol = l.tipo === 'solicitacao';
+  var thCols = isSol
+    ? '<th>Setor</th><th>Tipo Sol.</th><th>ID</th><th>Data</th><th>Temporalidade</th><th>Caixa</th>'
+    : '<th>Descrição</th><th>Informação</th><th>Data</th><th>Área</th><th>Temporalidade</th><th>Caixa</th>';
+  var docsHtml = l.documentos.map(function(d, di) {
+    var key = l.codigo + '_' + di;
+    if (isSol) {
+      return '<tr><td>'+esc(d.informacao)+'</td><td>'+esc(d.descricao)+'</td><td>'+esc(d.codigoId)+'</td><td>'+esc(d.dataDoc)+'</td>'
+        +'<td class="approve-inline-field"><input class="field-input" id="temp_'+escA(key)+'" value="'+escA(d.temporalidade)+'" placeholder="Temporalidade"></td>'
+        +'<td class="approve-inline-field"><div class="caixa-wrap"><input class="field-input" id="cx_'+escA(key)+'" value="'+escA(d.caixa)+'" placeholder="Cx." style="width:60px;"><button class="btn-copy-cx" onclick="copiarCxAcima(\''+escA(key)+'\')">↓</button></div></td>'
+        +'</tr>';
+    } else {
+      return '<tr><td>'+esc(d.descricao)+'</td><td>'+esc(d.informacao)+'</td><td>'+esc(d.dataDoc)+'</td>'
+        +'<td class="approve-inline-field"><input class="field-input" id="area_'+escA(key)+'" value="'+escA(d.area)+'" placeholder="Área"></td>'
+        +'<td class="approve-inline-field"><input class="field-input" id="temp_'+escA(key)+'" value="'+escA(d.temporalidade)+'" placeholder="Temporalidade"></td>'
+        +'<td class="approve-inline-field"><div class="caixa-wrap"><input class="field-input" id="cx_'+escA(key)+'" value="'+escA(d.caixa)+'" placeholder="Cx." style="width:60px;"><button class="btn-copy-cx" onclick="copiarCxAcima(\''+escA(key)+'\')">↓</button></div></td>'
+        +'</tr>';
+    }
+  }).join('');
+  var corpo = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Responsável</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.responsavel)+'</div>'
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Departamento</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.departamento)+'</div>'
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Data</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.data)+'</div>'
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Status</div>'
+      +statusBadge(l.status||'PENDENTE')
+    +'</div>'
+    +'</div>'
+    +'<div style="overflow-x:auto;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;">'
+    +'<table class="lote-docs-table" style="font-size:.83rem;"><thead><tr>'+thCols+'</tr></thead><tbody>'+docsHtml+'</tbody></table>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+    +'<button class="btn-acao btn-aprovar" onclick="aprovarLoteArq(\''+escA(codigo)+'\');fecharModal()">✅ Aprovar</button>'
+    +'<button class="btn-acao btn-cancelar" onclick="fecharModal();cancelarLoteArq(\''+escA(codigo)+'\')">✕ Cancelar</button>'
+    +'</div>';
+  abrirModal('Solicitação de Arquivamento', codigo, corpo, false, '', '', null, '960px');
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL HISTÓRICO DE ARQUIVAMENTO
+// ══════════════════════════════════════════════════════════
+function abrirModalHistArq(cod) {
+  var l = window._LOTES[cod];
+  if (!l) return;
+  var corpo = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Data</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.data)+'</div>'
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Status</div>'
+      +statusBadge(l.status)
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Responsável</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.resp)+'</div>'
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
+      +'<div class="field-label" style="margin-bottom:4px;">Departamento</div>'
+      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.dept)+'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="field-label" style="margin-bottom:10px;">Documentos ('+l.docs.length+')</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;">'
+    +l.docs.map(function(d,i){ return '<div style="font-size:.85rem;color:var(--texto);padding:8px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;"><span style="font-size:.7rem;font-weight:700;color:var(--texto-leve);min-width:18px;">'+(i+1)+'.</span>'+esc(d)+'</div>'; }).join('')
+    +'</div>';
+  abrirModal('Arquivamento', l.codigo, corpo, false, '', '', null, '800px');
+}
+</script>
