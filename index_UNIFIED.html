@@ -221,24 +221,24 @@
 </div>
 
 <!-- ══════════════ MODAL TROCA SENHA ══════════════ -->
-<div id="modalTrocaSenha" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:rgba(6,14,36,.88);backdrop-filter:blur(8px);">
-  <div style="background:rgba(8,18,50,.95);border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:36px;width:100%;max-width:420px;box-shadow:0 32px 80px rgba(0,0,0,.7);">
-    <h3 style="font-family:'Montserrat',sans-serif;font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:6px;">🔐 Troca de senha obrigatória</h3>
-    <p style="font-size:.83rem;color:rgba(148,200,255,.6);margin-bottom:22px;">Por segurança, defina uma nova senha antes de continuar. Mínimo 6 caracteres.</p>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
-      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Senha atual</label>
-      <input type="password" id="tAtual" placeholder="Senha atual" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+<div id="modalTrocaSenha">
+  <div class="troca-card">
+    <h3>🔐 Troca de senha obrigatória</h3>
+    <p>Por segurança, defina uma nova senha antes de continuar. Mínimo 6 caracteres.</p>
+    <div class="troca-campo">
+      <label>Senha atual</label>
+      <input type="password" id="tAtual" placeholder="Senha atual">
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
-      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Nova senha</label>
-      <input type="password" id="tNova" placeholder="Nova senha" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+    <div class="troca-campo">
+      <label>Nova senha</label>
+      <input type="password" id="tNova" placeholder="Nova senha">
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;">
-      <label style="font-size:.68rem;font-weight:700;color:rgba(148,200,255,.5);text-transform:uppercase;letter-spacing:.1em;">Confirmar nova senha</label>
-      <input type="password" id="tConfirm" placeholder="Confirme a nova senha" style="height:42px;padding:0 14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:.9rem;color:#e8f4ff;outline:none;">
+    <div class="troca-campo">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="tConfirm" placeholder="Confirme a nova senha">
     </div>
-    <div id="trocaErro" style="display:none;color:#fca5a5;font-size:.8rem;margin-bottom:12px;"></div>
-    <button onclick="confirmarTrocaSenha()" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;">Salvar nova senha</button>
+    <div id="trocaErro" class="troca-erro"></div>
+    <button class="btn-troca" onclick="confirmarTrocaSenha()">Salvar nova senha</button>
   </div>
 </div>
 
@@ -276,11 +276,12 @@
       <div class="sidebar-footer">GED © 2026</div>
     </div>
   </nav>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <button id="hamburgerBtn" onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none;background:none;border:none;cursor:pointer;color:#64748b;font-size:1.3rem;padding:4px 8px;margin-right:6px;line-height:1;">☰</button>
+      <button id="hamburgerBtn" onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarBackdrop').classList.toggle('show')" style="display:none;background:none;border:none;cursor:pointer;color:#64748b;font-size:1.3rem;padding:4px 8px;margin-right:6px;line-height:1;">☰</button>
       <span class="topbar-title" id="topbarTitle" style="display:none;">—</span>
       <span id="topbarDept" class="topbar-dept" style="display:none;"></span>
       <div class="topbar-dot" style="margin-left:auto;"></div>
@@ -358,7 +359,7 @@
               <input type="text" id="consultaInput" class="filter-bar-input" placeholder="Digite o nome do documento, projeto ou empresa..." onkeydown="if(event.key==='Enter')buscarConsulta(1)">
               <button id="consultaClearBtn" onclick="limparConsulta()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;display:none;">✕</button>
             </div>
-            <button onclick="buscarConsulta(1)" style="height:40px;padding:0 22px;background:linear-gradient(135deg,var(--azul-900),var(--azul-escuro));color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.25);transition:filter .15s;white-space:nowrap;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">Buscar</button>
+            <button onclick="buscarConsulta(1)" class="btn-primary">Buscar</button>
           </div>
         </div>
         <div id="consultaResultados"></div>
@@ -570,35 +571,35 @@
 </div><!-- /sistema -->
 
 <!-- ══════ MODAL GENÉRICO ══════ -->
-<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:28px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+<div id="modalOverlay">
+  <div>
+    <div class="modal-header-row">
       <div>
-        <div id="modalTitulo" style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:1rem;color:var(--texto);"></div>
-        <div id="modalSub" style="font-size:.82rem;color:var(--texto-leve);margin-top:4px;"></div>
+        <div id="modalTitulo" class="modal-title"></div>
+        <div id="modalSub" class="modal-sub"></div>
       </div>
-      <button onclick="fecharModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94a3b8;padding:0 4px;">✕</button>
+      <button onclick="fecharModal()" class="modal-close-btn">✕</button>
     </div>
     <div id="modalCorpo"></div>
-    <div id="modalBtns" style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-      <button onclick="fecharModal()" style="height:38px;padding:0 18px;background:var(--cinza-claro);border:1.5px solid var(--cinza-borda);border-radius:9px;font-weight:700;font-size:.82rem;cursor:pointer;color:var(--texto);font-family:'Montserrat',sans-serif;">Fechar</button>
-      <button id="modalConfirmar" style="display:none;height:38px;padding:0 22px;border:none;border-radius:9px;font-weight:700;font-size:.82rem;cursor:pointer;color:#fff;font-family:'Montserrat',sans-serif;background:linear-gradient(135deg,var(--azul-900),var(--azul-escuro));" onclick="executarModalConfirm()">Confirmar</button>
+    <div id="modalBtns" class="modal-btns">
+      <button onclick="fecharModal()" class="btn-cancel-modal">Fechar</button>
+      <button id="modalConfirmar" class="btn-confirm-modal" style="display:none;" onclick="executarModalConfirm()">Confirmar</button>
     </div>
   </div>
 </div>
 
 <!-- ══════ MODAL PREVIEW DOCUMENTO ══════ -->
-<div id="modalPreviewOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.8);backdrop-filter:blur(4px);z-index:3000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:20px;width:96%;max-width:900px;height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.3);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;gap:10px;">
-      <div id="previewTitulo" style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:.95rem;color:var(--texto);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-        <button onclick="imprimirPreview()" style="height:34px;padding:0 14px;background:var(--azul-escuro);color:#fff;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;border:none;">🖨 Imprimir</button>
-        <button onclick="fecharPreview()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94a3b8;padding:0 4px;">✕</button>
+<div id="modalPreviewOverlay">
+  <div class="preview-box">
+    <div class="preview-header">
+      <div id="previewTitulo" class="preview-titulo"></div>
+      <div class="preview-actions">
+        <button onclick="imprimirPreview()" class="btn-preview-print">🖨 Imprimir</button>
+        <button onclick="fecharPreview()" class="modal-close-btn">✕</button>
       </div>
     </div>
-    <div style="position:relative;flex:1;min-height:0;">
-      <iframe id="previewFrame" src="" style="width:100%;height:100%;border:none;border-radius:10px;background:#f8fafc;display:block;"></iframe>
+    <div class="preview-frame-wrap">
+      <iframe id="previewFrame" src=""></iframe>
     </div>
   </div>
 </div>

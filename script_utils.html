@@ -68,10 +68,7 @@ function abrirModal(titulo, sub, corpo, mostrarConfirmar, labelConfirmar, clsCon
   var btn=document.getElementById('modalConfirmar');
   if(mostrarConfirmar){
     btn.style.display=''; btn.textContent=labelConfirmar||'Confirmar';
-    btn.style.background=clsConfirmar==='vermelho'?'linear-gradient(135deg,#dc2626,#f87171)':
-      clsConfirmar==='verde'?'linear-gradient(135deg,#16a34a,#22c55e)':
-      clsConfirmar==='amarelo'?'linear-gradient(135deg,#D97706,#F59E0B)':
-      'linear-gradient(135deg,var(--azul-900),var(--azul-escuro))';
+    btn.className='btn-confirm-modal'+(clsConfirmar?' '+clsConfirmar:'');
     _modalConfirmFn=fn;
   } else { btn.style.display='none'; _modalConfirmFn=null; }
   var inner=document.querySelector('#modalOverlay>div');
