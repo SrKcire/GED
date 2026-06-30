@@ -75,8 +75,14 @@ function carregarDashUser() {
     if(!resultados.arq || !resultados.ret) return;
     var html='';
 
-    // Arquivamentos
-    var arqFiltrado=(resultados.arq.registros||[]).slice(0,5);
+    // Arquivamentos (agrupado por código — cada lote pode ter vários documentos/linhas)
+    var arqFiltrado=[]; var arqVistos={};
+    (resultados.arq.registros||[]).forEach(function(r){
+      var cod=r['CÓDIGO']||'—';
+      if(arqVistos[cod]) return;
+      arqVistos[cod]=true;
+      if(arqFiltrado.length<5) arqFiltrado.push(r);
+    });
     html+='<div style="margin-bottom:24px;">';
     html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Meus arquivamentos</div>';
     if(arqFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhum arquivamento registrado.</div>'; }
@@ -92,8 +98,14 @@ function carregarDashUser() {
     }
     html+='</div>';
 
-    // Retiradas
-    var retFiltrado=(resultados.ret.registros||[]).slice(0,5);
+    // Retiradas (agrupado por código — cada lote pode ter vários documentos/linhas)
+    var retFiltrado=[]; var retVistos={};
+    (resultados.ret.registros||[]).forEach(function(r){
+      var cod=r['CÓDIGO']||'—';
+      if(retVistos[cod]) return;
+      retVistos[cod]=true;
+      if(retFiltrado.length<5) retFiltrado.push(r);
+    });
     html+='<div>';
     html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Minhas retiradas</div>';
     if(retFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhuma retirada registrada.</div>'; }

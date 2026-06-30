@@ -17,6 +17,17 @@ var ICONS_TIPO = {
   '1':'📋','2':'📁','3':'📝','6':'🗂','7':'📄','_generico':'📄'
 };
 
+// Opções fixas do campo "Tipo de Documento" no formulário de arquivamento do usuário
+var TIPOS_DOCUMENTO_USER = [
+  {id:'1',     nome:'Solicitação de Material'},
+  {id:'po',    nome:'Proposta/Orçamento'},
+  {id:'3',     nome:'Contratos'},
+  {id:'pl',    nome:'Plantas'},
+  {id:'cert',  nome:'Certificados'},
+  {id:'proto', nome:'Protocolos'},
+  {id:'proj',  nome:'Projetos'}
+];
+
 // ══════════════════════════════════════════════════════════
 //  ARQUIVAMENTO — FORM COMPARTILHADO
 // ══════════════════════════════════════════════════════════
@@ -305,10 +316,8 @@ function carregarArqUser(){
   if(deptEl) deptEl.value=_arqDept;
   var sel=document.getElementById('arqUserTipo');
   if(sel){
-    var tipos=TIPOS_DEPT[_arqDept];
     sel.innerHTML='<option value="">— Selecione o tipo —</option>';
-    if(tipos){ tipos.forEach(function(t){ sel.innerHTML+='<option value="'+escA(t.id)+'">'+esc(t.nome)+'</option>'; }); }
-    else { sel.innerHTML+='<option value="_generico">Documento Geral</option>'; }
+    TIPOS_DOCUMENTO_USER.forEach(function(t){ sel.innerHTML+='<option value="'+escA(t.id)+'">'+esc(t.nome)+'</option>'; });
   }
   var da=document.getElementById('arqUserDocsArea');
   if(da) da.innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8;"><div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">📄</div><p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p></div>';
@@ -369,7 +378,10 @@ function renderizarHistArq(r,wrapId,perfil){
   regs.forEach(function(reg){
     var codigo=reg['CÓDIGO']||'—';
     if(!lotes[codigo]) lotes[codigo]={codigo:codigo,data:reg['DATA']||'',resp:reg['RESPONSÁVEL']||'',dept:reg['DEPARTAMENTO']||'',status:reg['STATUS']||'PENDENTE',docs:[]};
-    lotes[codigo].docs.push(reg['DESCRIÇÃO / TIPO']||reg['ID']||'—');
+    lotes[codigo].docs.push({
+      descricao:  reg['DESCRIÇÃO / TIPO']||reg['ID']||'—',
+      informacao: reg['INFORMAÇÃO']||''
+    });
   });
   Object.values(lotes).forEach(function(l){ window._LOTES[l.codigo]=l; });
   var lotesArr=Object.values(lotes);
@@ -386,7 +398,7 @@ function renderizarHistArq(r,wrapId,perfil){
     return '<div class="hist-card" style="cursor:pointer;" onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')">'
       +'<div class="hist-card-header"><span class="hist-card-cod">'+esc(l.codigo)+'</span>'+statusBadge(l.status)+'</div>'
       +'<div class="hist-card-meta">'+esc(l.data)+' · '+esc(l.resp)+' · '+esc(l.dept)+'</div>'
-      +'<div class="hist-card-docs">'+esc(l.docs.slice(0,3).join(', '))+(l.docs.length>3?' +mais...':'')+'</div>'
+      +'<div class="hist-card-docs">'+esc(l.docs.slice(0,3).map(function(d){return d.descricao;}).join(', '))+(l.docs.length>3?' +mais...':'')+'</div>'
       +'</div>';
   }).join('')+'</div>';
 }
@@ -394,7 +406,7 @@ function renderizarHistArq(r,wrapId,perfil){
 function _renderizarArqHistTabela(lotesArr){
   var filterVal=(document.getElementById('arqHistFilter')||{}).value||'';
   var lista=filterVal?lotesArr.filter(function(l){
-    var s=norm(l.codigo)+' '+norm(l.data)+' '+norm(l.docs.join(' '));
+    var s=norm(l.codigo)+' '+norm(l.data)+' '+norm(l.docs.map(function(d){return d.descricao+' '+d.informacao;}).join(' '));
     return norm(filterVal).split(' ').every(function(p){return s.includes(p);});
   }):lotesArr;
   var scOps=document.getElementById('scArqOps'); if(scOps) scOps.textContent=lotesArr.length;
@@ -409,7 +421,7 @@ function _renderizarArqHistTabela(lotesArr){
     return '<tr>'
       +'<td><span style="font-family:\'Montserrat\',sans-serif;font-weight:700;font-size:.82rem;color:var(--azul-escuro);">'+esc(l.codigo)+'</span></td>'
       +'<td>'+esc(l.data)+'</td>'
-      +'<td>'+esc(l.docs[0])+(l.docs.length>1?' <span style="font-size:.7rem;color:#94a3b8;">+mais '+(l.docs.length-1)+'</span>':'')+'</td>'
+      +'<td>'+esc(l.docs[0].descricao)+(l.docs.length>1?' <span style="font-size:.7rem;color:#94a3b8;">+mais '+(l.docs.length-1)+'</span>':'')+'</td>'
       +'<td style="font-family:\'Montserrat\',sans-serif;font-weight:700;color:var(--azul-escuro);">'+l.docs.length+'</td>'
       +'<td>'+statusBadge(l.status)+'</td>'
       +'<td><button onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')" style="height:28px;padding:0 12px;background:#EFF6FF;color:var(--azul-escuro);border:1px solid #BFDBFE;border-radius:6px;font-size:.73rem;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">Ver</button></td>'
@@ -499,7 +511,7 @@ function abrirModalHistArq(cod) {
     +'</div>'
     +'<div class="field-label" style="margin-bottom:10px;">Documentos ('+l.docs.length+')</div>'
     +'<div class="modal-scroll-list" style="display:flex;flex-direction:column;gap:6px;">'
-    +l.docs.map(function(d,i){ return '<div style="font-size:.85rem;color:var(--texto);padding:8px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;"><span style="font-size:.7rem;font-weight:700;color:var(--texto-leve);min-width:18px;">'+(i+1)+'.</span>'+esc(d)+'</div>'; }).join('')
+    +l.docs.map(function(d,i){ return '<div style="font-size:.85rem;color:var(--texto);padding:8px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;"><span style="font-size:.7rem;font-weight:700;color:var(--texto-leve);min-width:18px;">'+(i+1)+'.</span><span>'+esc(d.descricao)+(d.informacao?' <span style="color:var(--texto-leve);">— '+esc(d.informacao)+'</span>':'')+'</span></div>'; }).join('')
     +'</div>';
   abrirModal('Arquivamento', l.codigo, corpo, false, '', '', null, '800px');
 }
