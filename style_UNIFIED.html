@@ -60,6 +60,10 @@
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── Ocultar barras de rolagem em todo o sistema (rolagem continua funcional) ── */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
 body {
   font-family: var(--font-body);
   background: var(--azul-bg);

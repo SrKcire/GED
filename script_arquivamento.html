@@ -499,28 +499,19 @@ function abrirModalArqPendente(codigo) {
 function abrirModalHistArq(cod) {
   var l = _loteGet('arq', cod);
   if (!l) return;
-  var corpo = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'
-    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
-      +'<div class="field-label" style="margin-bottom:4px;">Data</div>'
-      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.data)+'</div>'
+  var docs = l.docs.map(function(d){
+    return '<tr><td>'+esc(d.descricao)+'</td><td>'+esc(d.informacao||'—')+'</td></tr>';
+  }).join('');
+  var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    +'<div><div class="field-label">Responsável</div><div style="font-size:.88rem;font-weight:600;color:var(--texto);">'+esc(l.resp)+'</div></div>'
+    +'<div><div class="field-label">Departamento</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.dept)+'</div></div>'
+    +'<div><div class="field-label">Data</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.data)+'</div></div>'
+    +'<div><div class="field-label">Status</div>'+statusBadge(l.status)+'</div>'
     +'</div>'
-    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
-      +'<div class="field-label" style="margin-bottom:4px;">Status</div>'
-      +statusBadge(l.status)
-    +'</div>'
-    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
-      +'<div class="field-label" style="margin-bottom:4px;">Responsável</div>'
-      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.resp)+'</div>'
-    +'</div>'
-    +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'
-      +'<div class="field-label" style="margin-bottom:4px;">Departamento</div>'
-      +'<div style="font-size:.9rem;font-weight:600;color:var(--texto);">'+esc(l.dept)+'</div>'
-    +'</div>'
-    +'</div>'
-    +'<div class="field-label" style="margin-bottom:10px;">Documentos ('+l.docs.length+')</div>'
-    +'<div class="modal-scroll-list" style="display:flex;flex-direction:column;gap:6px;">'
-    +l.docs.map(function(d,i){ return '<div style="font-size:.85rem;color:var(--texto);padding:8px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;"><span style="font-size:.7rem;font-weight:700;color:var(--texto-leve);min-width:18px;">'+(i+1)+'.</span><span>'+esc(d.descricao)+(d.informacao?' <span style="color:var(--texto-leve);">— '+esc(d.informacao)+'</span>':'')+'</span></div>'; }).join('')
+    +'<div style="overflow-x:auto;margin-bottom:16px;">'
+    +'<table class="lote-docs-table"><thead><tr><th>Descrição</th><th>Informação</th></tr></thead>'
+    +'<tbody>'+docs+'</tbody></table>'
     +'</div>';
-  abrirModal('Arquivamento', l.codigo, corpo, false, '', '', null, '800px');
+  abrirModal('Arquivamento', l.codigo, corpo, false);
 }
 </script>

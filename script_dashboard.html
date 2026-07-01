@@ -66,6 +66,8 @@ function irParaPendencia(dest, cod) {
 // ══════════════════════════════════════════════════════════
 //  DASHBOARD USUÁRIO
 // ══════════════════════════════════════════════════════════
+var _dashUserFull = { arq:[], ret:[] };
+
 function carregarDashUser() {
   document.getElementById('dashUserBemVindo').textContent = 'Olá, '+S.nome.split(' ')[0]+'!';
   mostrarSpinner('userAtividades');
@@ -83,10 +85,15 @@ function carregarDashUser() {
       lotesArq[cod].docs.push({ descricao: reg['DESCRIÇÃO / TIPO']||'—', informacao: reg['INFORMAÇÃO']||'' });
     });
     Object.values(lotesArq).forEach(function(l){ _loteSet('arq', l.codigo, l); });
-    var arqFiltrado=Object.values(lotesArq).slice(0,5);
+    var arqArr=Object.values(lotesArq);
+    _dashUserFull.arq=arqArr;
+    var arqFiltrado=arqArr.slice(0,3);
 
     html+='<div style="margin-bottom:24px;">';
-    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Meus arquivamentos</div>';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">';
+    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;">Meus arquivamentos</div>';
+    if(arqArr.length>3) html+='<button class="btn-ver-mais" onclick="abrirModalVerMais(\'arq\')">Ver mais</button>';
+    html+='</div>';
     if(arqFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhum arquivamento registrado.</div>'; }
     else {
       html+='<div class="user-activity-list">';
@@ -108,16 +115,23 @@ function carregarDashUser() {
         codigo:cod, data:reg['DATA']||'', status:reg['STATUS RETIRADA']||'PENDENTE',
         statusDev:reg['STATUS DEVOLUÇÃO']||'', email:reg['EMAIL']||'',
         responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
-        docs:[], caixas:[]
+        motivo:reg['MOTIVO']||'',
+        docs:[], caixas:[], projetos:[]
       };
       lotesRet[cod].docs.push(reg['DESCRIÇÃO']||'—');
       lotesRet[cod].caixas.push(reg['CAIXA']||'—');
+      lotesRet[cod].projetos.push(reg['PROJETO']||'—');
     });
     Object.values(lotesRet).forEach(function(l){ _loteSet('ret', l.codigo, l); });
-    var retFiltrado=Object.values(lotesRet).slice(0,5);
+    var retArr=Object.values(lotesRet);
+    _dashUserFull.ret=retArr;
+    var retFiltrado=retArr.slice(0,3);
 
     html+='<div>';
-    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Minhas retiradas</div>';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">';
+    html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;">Minhas retiradas</div>';
+    if(retArr.length>3) html+='<button class="btn-ver-mais" onclick="abrirModalVerMais(\'ret\')">Ver mais</button>';
+    html+='</div>';
     if(retFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhuma retirada registrada.</div>'; }
     else {
       html+='<div class="user-activity-list">';
@@ -146,5 +160,29 @@ function carregarDashUser() {
       document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
     })
     .buscarHistorico('retirada', S.email);
+}
+
+function abrirModalVerMais(tipo){
+  var lista = _dashUserFull[tipo]||[];
+  var titulo = tipo==='arq' ? 'Meus arquivamentos' : 'Minhas retiradas';
+  var iconBg = tipo==='arq' ? '#EFF6FF' : '#F0FDF4';
+  var iconName = tipo==='arq' ? 'archive' : 'upload';
+  var abrirDetalhe = tipo==='arq' ? 'abrirModalHistArq' : 'abrirModalHistRetUser';
+
+  if(lista.length===0){
+    abrirModal(titulo,'','<div class="empty-state"><div class="empty-state-icon">'+icon('inbox')+'</div><p>Nenhum registro encontrado.</p></div>',false);
+    return;
+  }
+
+  var html='<div class="user-activity-list modal-scroll-list">';
+  lista.forEach(function(l){
+    var meta = tipo==='arq' ? esc(l.data) : esc(l.data)+' · '+esc(l.departamento);
+    html+='<div class="activity-item" style="cursor:pointer;" onclick="'+abrirDetalhe+'(\''+escA(l.codigo)+'\')"><div class="activity-item-icon" style="background:'+iconBg+';">'+icon(iconName)+'</div>'
+      +'<div class="activity-item-body"><div class="activity-item-title">'+esc(l.codigo)+'</div>'
+      +'<div class="activity-item-meta">'+meta+'</div></div>'
+      +statusBadge(l.status)+'</div>';
+  });
+  html+='</div>';
+  abrirModal(titulo, lista.length+' registro(s)', html, false);
 }
 </script>

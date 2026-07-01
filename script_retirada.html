@@ -183,10 +183,12 @@ function renderizarHistRetiradaUser(r){
       codigo:codigo, data:reg['DATA']||'', status:reg['STATUS RETIRADA']||'PENDENTE',
       statusDev:reg['STATUS DEVOLUÇÃO']||'', email:reg['EMAIL']||'',
       responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
-      docs:[], caixas:[]
+      motivo:reg['MOTIVO']||'',
+      docs:[], caixas:[], projetos:[]
     };
     lotes[codigo].docs.push(reg['DESCRIÇÃO']||'—');
     lotes[codigo].caixas.push(reg['CAIXA']||'—');
+    lotes[codigo].projetos.push(reg['PROJETO']||'—');
   });
   Object.values(lotes).forEach(function(l){ _loteSet('ret', l.codigo, l); });
   _retHistLotesCache=Object.values(lotes);
@@ -291,15 +293,21 @@ function abrirModalHistRetUser(cod) {
   var l = _loteGet('ret', cod);
   if (!l) return;
   var podeCancelar = l.status === 'PENDENTE';
+  var docs = l.docs.map(function(d,i){
+    return '<tr><td>'+esc((l.projetos&&l.projetos[i])||'—')+'</td><td>'+esc(d)+'</td><td>'+esc((l.caixas&&l.caixas[i])||'—')+'</td></tr>';
+  }).join('');
   var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    +'<div><div class="field-label">Responsável</div><div style="font-size:.88rem;font-weight:600;color:var(--texto);">'+esc(l.responsavel)+'</div></div>'
+    +'<div><div class="field-label">Departamento</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.departamento)+'</div></div>'
     +'<div><div class="field-label">Data</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.data)+'</div></div>'
     +'<div><div class="field-label">Status Retirada</div>'+statusBadge(l.status)+'</div>'
     +(l.statusDev?'<div><div class="field-label">Status Devolução</div>'+statusBadge(l.statusDev)+'</div>':'')
+    +(l.motivo?'<div style="grid-column:1/-1;"><div class="field-label">Motivo</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.motivo)+'</div></div>':'')
     +'</div>'
-    +'<div><div class="field-label" style="margin-bottom:8px;">Documentos</div>'
-    +'<div style="display:flex;flex-direction:column;gap:4px;">'
-    +l.docs.map(function(d){ return '<div style="font-size:.83rem;color:var(--texto);padding:5px 10px;background:#f8fafc;border-radius:6px;">'+esc(d)+'</div>'; }).join('')
-    +'</div></div>';
+    +'<div style="overflow-x:auto;margin-bottom:16px;">'
+    +'<table class="lote-docs-table"><thead><tr><th>Projeto</th><th>Descrição</th><th>Caixa</th></tr></thead>'
+    +'<tbody>'+docs+'</tbody></table>'
+    +'</div>';
   abrirModal('Retirada', l.codigo, corpo,
     podeCancelar, 'Cancelar retirada', 'vermelho',
     podeCancelar ? function(){ cancelarRetiradaUser(l.codigo); } : null);
