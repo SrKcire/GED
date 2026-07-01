@@ -1,0 +1,162 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  DESCARTE — ADM (listagem/decisão) + USUÁRIO (solicitar/histórico)
+// ══════════════════════════════════════════════════════════
+function carregarDescarte() {
+  var admView  = document.getElementById('descarteAdmView');
+  var userView = document.getElementById('descarteUserView');
+  if (S.perfil === 'GED') {
+    admView.style.display = ''; userView.style.display = 'none';
+    carregarDescartesAdm('pendentes');
+  } else {
+    admView.style.display = 'none'; userView.style.display = '';
+    prepararDescarteUser();
+  }
+}
+
+// ── ADM ──
+function carregarDescartesAdm(filtro) {
+  var wrapId = filtro === 'pendentes' ? 'descarteAdmLista' : 'descarteAdmHistLista';
+  mostrarSpinner(wrapId);
+  google.script.run
+    .withSuccessHandler(function(r){ renderizarDescartesAdm(r.descartes || [], wrapId); })
+    .withFailureHandler(function(){
+      document.getElementById(wrapId).innerHTML = '<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar solicitações. Tente novamente.</p></div>';
+    })
+    .getDescartes(filtro, S.email);
+}
+
+function renderizarDescartesAdm(lista, wrapId) {
+  var wrap = document.getElementById(wrapId);
+  if (!lista || lista.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-state-icon">'+icon('check')+'</div><p>Nenhuma solicitação encontrada.</p></div>';
+    return;
+  }
+  wrap.innerHTML = lista.map(function(item){
+    _loteSet('des', item.codigo, item);
+    return '<div class="lote-card" style="cursor:pointer;" onclick="abrirModalDescarte(\''+escA(item.codigo)+'\')">'
+      +'<div class="lote-header">'
+        +'<div><div class="lote-cod">'+esc(item.codigo)+'</div><div class="lote-meta-text">'+esc(item.responsavel)+' · '+esc(item.departamento)+' · '+esc(item.data)+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:10px;">'+statusBadge(item.status)+'<span style="color:var(--azul-escuro);font-size:.9rem;">›</span></div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function abrirModalDescarte(codigo) {
+  var l = _loteGet('des', codigo);
+  if (!l) { toast('Solicitação não encontrada. Atualize a lista.', 'error'); return; }
+
+  var acoes = '';
+  if (l.status === 'PENDENTE') {
+    acoes = '<button class="btn-acao btn-aprovar" onclick="fecharModal();decidirDescarte(\''+escA(codigo)+'\',\'APROVADO\')">'+icon('check')+' Aprovar</button>'
+      +'<button class="btn-acao btn-cancelar" onclick="fecharModal();decidirDescarte(\''+escA(codigo)+'\',\'RECUSADO\')">'+icon('x')+' Recusar</button>';
+  }
+
+  var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    +'<div><div class="field-label">Responsável</div><div style="font-size:.88rem;font-weight:600;color:var(--texto);">'+esc(l.responsavel)+'</div></div>'
+    +'<div><div class="field-label">Departamento</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.departamento)+'</div></div>'
+    +'<div><div class="field-label">Data</div><div style="font-size:.88rem;color:var(--texto);">'+esc(l.data)+'</div></div>'
+    +'<div><div class="field-label">Status</div>'+statusBadge(l.status)+'</div>'
+    +'<div style="grid-column:1/-1;"><div class="field-label">Documentos</div><div style="font-size:.88rem;color:var(--texto);white-space:pre-wrap;">'+esc(l.documentos)+'</div></div>'
+    +'<div style="grid-column:1/-1;"><div class="field-label">Justificativa</div><div style="font-size:.88rem;color:var(--texto);white-space:pre-wrap;">'+esc(l.justificativa)+'</div></div>'
+    +(l.observacaoAdm ? '<div style="grid-column:1/-1;"><div class="field-label">Observação ADM</div><div style="font-size:.88rem;color:var(--texto);white-space:pre-wrap;">'+esc(l.observacaoAdm)+'</div></div>' : '')
+    +'</div>'
+    +(acoes ? '<div style="display:flex;gap:10px;flex-wrap:wrap;">'+acoes+'</div>' : '');
+
+  abrirModal('Solicitação de Descarte', codigo, corpo, false);
+}
+
+function decidirDescarte(codigo, decisao) {
+  var aprovando = decisao === 'APROVADO';
+  var titulo = aprovando ? 'Aprovar descarte' : 'Recusar descarte';
+  var label  = aprovando ? 'Observação (opcional)' : 'Motivo da recusa';
+
+  abrirModal(titulo, 'Lote: '+codigo,
+    '<div style="margin-bottom:12px;"><div class="field-label">'+label+'</div><textarea id="obsDescarte" class="field-input" style="height:70px;padding:10px;" placeholder="'+(aprovando?'Observação (opcional)...':'Informe o motivo...')+'"></textarea></div>',
+    true, aprovando ? 'Confirmar aprovação' : 'Confirmar recusa', aprovando ? 'verde' : 'vermelho',
+    function(){
+      var obs = document.getElementById('obsDescarte') ? document.getElementById('obsDescarte').value : '';
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r.ok) { toast('Solicitação '+(aprovando?'aprovada':'recusada')+'.', 'success'); carregarDescartesAdm('pendentes'); }
+          else toast(r.erro || 'Erro.', 'error');
+        })
+        .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+        .aprovarDescarte(codigo, decisao, obs, S.email);
+    });
+}
+
+// ── USUÁRIO ──
+function prepararDescarteUser() {
+  var respEl = document.getElementById('descUserResp'); if (respEl) respEl.value = S.nome;
+  var deptEl = document.getElementById('descUserDept'); if (deptEl) deptEl.value = S.departamento || S.perfil || '';
+  var docsEl = document.getElementById('descUserDocs'); if (docsEl) docsEl.value = '';
+  var justEl = document.getElementById('descUserJust'); if (justEl) justEl.value = '';
+  switchDescarteUserTab('sol');
+}
+
+function switchDescarteUserTab(pane) {
+  var sP = document.getElementById('descarte-user-sol-pane');
+  var hP = document.getElementById('descarte-user-hist-pane');
+  var tS = document.getElementById('tabDescarteUserSol');
+  var tH = document.getElementById('tabDescarteUserHist');
+  if (!sP || !hP) return;
+  if (pane === 'sol') {
+    sP.style.display = ''; hP.style.display = 'none';
+    if (tS) { tS.classList.add('active','red'); } if (tH) { tH.classList.remove('active'); }
+  } else {
+    sP.style.display = 'none'; hP.style.display = '';
+    if (tH) { tH.classList.add('active'); } if (tS) { tS.classList.remove('active','red'); }
+  }
+}
+
+function submeterDescarte() {
+  var docs = document.getElementById('descUserDocs').value.trim();
+  var just = document.getElementById('descUserJust').value.trim();
+  if (!docs) { toast('Descreva os documentos a serem descartados.', 'error'); return; }
+  if (!just) { toast('Informe a justificativa do descarte.', 'error'); return; }
+
+  var payload = { responsavel: S.nome, email: S.email, departamento: S.departamento || '', documentos: docs, justificativa: just };
+  document.getElementById('descUserMsg').textContent = 'Enviando...';
+  google.script.run
+    .withSuccessHandler(function(r){
+      document.getElementById('descUserMsg').textContent = '';
+      if (r.sucesso) {
+        toast('Descarte solicitado! Código: '+r.codigo, 'success');
+        document.getElementById('descUserDocs').value = '';
+        document.getElementById('descUserJust').value = '';
+      } else toast(r.erro || 'Erro.', 'error');
+    })
+    .withFailureHandler(function(){
+      document.getElementById('descUserMsg').textContent = '';
+      toast('Erro de conexão.', 'error');
+    })
+    .solicitarDescarte(payload);
+}
+
+function carregarHistDescarteUser() {
+  mostrarSpinner('descarteUserHistLista');
+  google.script.run
+    .withSuccessHandler(function(r){ renderizarHistDescarteUser(r.registros || []); })
+    .withFailureHandler(function(){
+      document.getElementById('descarteUserHistLista').innerHTML = '<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar histórico.</p></div>';
+    })
+    .buscarHistorico('descarte', S.email);
+}
+
+function renderizarHistDescarteUser(regs) {
+  var wrap = document.getElementById('descarteUserHistLista');
+  if (!regs || regs.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-state-icon">'+icon('inbox')+'</div><p>Nenhuma solicitação de descarte registrada.</p></div>';
+    return;
+  }
+  wrap.innerHTML = '<div class="hist-list">'+regs.map(function(r){
+    return '<div class="hist-card">'
+      +'<div class="hist-card-header"><span class="hist-card-cod">'+esc(r['CÓDIGO']||'—')+'</span>'+statusBadge(r['STATUS']||'PENDENTE')+'</div>'
+      +'<div class="hist-card-meta">'+esc(r['DATA']||'—')+'</div>'
+      +'<div class="hist-card-docs">'+esc(r['DOCUMENTOS']||'—')+'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+</script>

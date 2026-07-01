@@ -135,8 +135,18 @@ function buscarDocumentos(termo, pagina, departamento) {
  * Busca todo o acervo físico para fins de CONSULTA (não confundir com
  * buscarDocumentosRetirada, que exclui documentos já bloqueados).
  */
-function buscarAcervoFisicoConsulta(departamento, incluirMock) {
+function buscarAcervoFisicoConsulta(departamento, incluirMock, emailSolicitante) {
   try {
+    // SEGURANÇA: mesmo raciocínio de buscarDocumentosRetirada — não confiar
+    // no departamento enviado pelo cliente para perfis não-GED (evita que
+    // um usuário peça o acervo de outro departamento via chamada direta).
+    const infoU = _infoUsuario_(emailSolicitante);
+    if (!infoU.encontrado || !infoU.ativo) return { documentos: [], erro: 'Usuário não identificado ou inativo.' };
+    if (infoU.perfil !== 'GED') {
+      departamento = infoU.departamento;
+      incluirMock  = infoU.departamento === 'Infraestrutura';
+    }
+
     const ss = SpreadsheetApp.openById(SHEET_ID);
     const isGED = !departamento || departamento === 'GED';
 
@@ -210,6 +220,24 @@ function buscarAcervoFisicoConsulta(departamento, incluirMock) {
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
+ * Resolve os nomes de coluna a usar como chave dos objetos retornados ao
+ * frontend. Para abas com cabeçalho canônico conhecido (Config.gs), usa
+ * sempre o nome canônico por POSIÇÃO — assim uma renomeação manual da
+ * célula de cabeçalho na planilha não quebra silenciosamente os campos
+ * que o frontend espera (ex.: reg['CÓDIGO']). Colunas além do esquema
+ * conhecido caem de volta no texto que estiver de fato na planilha.
+ */
+function _resolverCabecalhos_(nomeAba, cabecalhosLivres) {
+  const canonicos = {
+    'Arquivamento': COLUNAS_ARQUIVAMENTO,
+    'Retiradas':    COLUNAS_RETIRADAS,
+    'Descartes':    COLUNAS_DESCARTES
+  }[nomeAba];
+  if (!canonicos) return cabecalhosLivres;
+  return cabecalhosLivres.map((livre, i) => canonicos[i] !== undefined ? canonicos[i] : livre);
+}
+
+/**
  * Busca registros do histórico do usuário.
  * @param {'retirada'|'arquivamento'|'descarte'} tipo
  * @param {string} emailUsuario  — filtra pelo e-mail; vazio retorna todos (ADM)
@@ -230,7 +258,7 @@ function buscarHistorico(tipo, emailUsuario) {
 
     const ultimaCol  = sheet.getLastColumn();
     const dados      = sheet.getRange(2, 1, sheet.getLastRow() - 1, ultimaCol).getValues();
-    const cabecalhos = sheet.getRange(1, 1, 1, ultimaCol).getValues()[0].map(String);
+    const cabecalhos = _resolverCabecalhos_(nomeAba, sheet.getRange(1, 1, 1, ultimaCol).getValues()[0].map(String));
 
     const filtrados = emailUsuario
       ? dados.filter(row => String(row[3] || '').trim().toLowerCase() === emailUsuario.toLowerCase())
@@ -275,7 +303,7 @@ function buscarDadosEtiqueta(codigo) {
 
     const ultimaCol  = sheet.getLastColumn();
     const dados      = sheet.getRange(2, 1, sheet.getLastRow() - 1, ultimaCol).getValues();
-    const cabecalhos = sheet.getRange(1, 1, 1, ultimaCol).getValues()[0].map(String);
+    const cabecalhos = _resolverCabecalhos_('Arquivamento', sheet.getRange(1, 1, 1, ultimaCol).getValues()[0].map(String));
     const tz         = Session.getScriptTimeZone();
 
     const linhas = dados

@@ -8,7 +8,11 @@ var _modalConfirmFn = null;
 var _consultaCache = { fisico: [], digital: [] };
 var _retDocsCache = [];
 var _admPendencias = { ret: [], arq: [], des: [] };
-window._LOTES = {}; // mapa código→objeto lote, evita serialização JSON em onclick (vetor XSS)
+window._LOTES = {}; // mapa "namespace:código"→objeto lote, evita serialização JSON em onclick (vetor XSS)
+// Namespace por tipo (arq/ret) evita que um lote de arquivamento e um de
+// retirada com o mesmo código colidam nesse cache global compartilhado.
+function _loteSet(ns, codigo, obj) { window._LOTES[ns+':'+codigo] = obj; }
+function _loteGet(ns, codigo) { return window._LOTES[ns+':'+codigo]; }
 
 // ══════════════════════════════════════════════════════════
 //  UTILS

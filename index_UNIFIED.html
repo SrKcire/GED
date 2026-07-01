@@ -550,12 +550,52 @@
       <div class="page" id="page-descarte">
         <div class="page-header">
           <h1>Descarte de Documentos</h1>
+          <p>Solicite ou gerencie o descarte de documentos do acervo.</p>
         </div>
-        <div class="em-dev">
-          <div class="em-dev-icon" data-icon="tool"></div>
-          <h2>Em desenvolvimento</h2>
-          <p>Esta funcionalidade estará disponível em breve. Acompanhe as atualizações do sistema GED.</p>
-          <span class="em-dev-badge">Em breve</span>
+
+        <!-- ADM -->
+        <div id="descarteAdmView" style="display:none;">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="descarte-adm-pend" onclick="switchTab(this,'descarte-adm')"><span data-icon="clock" style="margin-right:5px;"></span>Pendentes</button>
+            <button class="tab-btn" data-tab="descarte-adm-hist" onclick="switchTab(this,'descarte-adm');carregarDescartesAdm('todos')"><span data-icon="folder" style="margin-right:5px;"></span>Histórico</button>
+          </div>
+          <div class="tab-pane active" id="descarte-adm-pend">
+            <div id="descarteAdmLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+          </div>
+          <div class="tab-pane" id="descarte-adm-hist">
+            <div id="descarteAdmHistLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+          </div>
+        </div>
+
+        <!-- USUÁRIO -->
+        <div id="descarteUserView" style="display:none;">
+          <div class="tab-action-btns" style="margin-bottom:20px;">
+            <button class="tab-action-btn active red" id="tabDescarteUserSol" onclick="switchDescarteUserTab('sol')"><span data-icon="trash" style="margin-right:5px;"></span>Solicitar</button>
+            <button class="tab-action-btn" id="tabDescarteUserHist" onclick="switchDescarteUserTab('hist');carregarHistDescarteUser()"><span data-icon="clock" style="margin-right:5px;"></span>Histórico</button>
+          </div>
+          <div id="descarte-user-sol-pane">
+            <div class="section-card">
+              <div class="field-group cols-2" style="margin-bottom:12px;">
+                <div class="field-block"><label>Responsável</label><input type="text" id="descUserResp" readonly></div>
+                <div class="field-block"><label>Departamento</label><input type="text" id="descUserDept" readonly></div>
+              </div>
+              <div class="field-block" style="margin-bottom:12px;">
+                <label>Documentos a descartar <span style="color:var(--vermelho);">*</span></label>
+                <textarea id="descUserDocs" placeholder="Descreva os documentos a serem descartados..."></textarea>
+              </div>
+              <div class="field-block">
+                <label>Justificativa <span style="color:var(--vermelho);">*</span></label>
+                <textarea id="descUserJust" placeholder="Explique o motivo do descarte..."></textarea>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+              <button class="btn-primary" onclick="submeterDescarte()">Solicitar descarte</button>
+              <span id="descUserMsg" style="font-size:.82rem;color:var(--texto-leve);"></span>
+            </div>
+          </div>
+          <div id="descarte-user-hist-pane" style="display:none;">
+            <div id="descarteUserHistLista"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+          </div>
         </div>
       </div>
 
@@ -569,6 +609,23 @@
           <h2>Em desenvolvimento</h2>
           <p>O módulo de digitalização de dossiês de alunos estará disponível em breve.</p>
           <span class="em-dev-badge">Em breve</span>
+        </div>
+      </div>
+
+      <!-- ════ USUÁRIOS (ADM only) ════ -->
+      <div class="page" id="page-usuarios">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1>Usuários</h1>
+            <p>Gerencie os usuários com acesso ao sistema GED.</p>
+          </div>
+          <button class="btn-primary" onclick="abrirModalUsuario()"><span data-icon="plus" style="margin-right:6px;"></span>Novo usuário</button>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Login</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Departamento</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="usuariosTableBody"><tr><td colspan="7" style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto 8px;"></div>Carregando...</td></tr></tbody>
+          </table>
         </div>
       </div>
 
@@ -619,6 +676,8 @@
 <?!= include('script_consulta'); ?>
 <?!= include('script_arquivamento'); ?>
 <?!= include('script_retirada'); ?>
+<?!= include('script_descarte'); ?>
+<?!= include('script_usuarios'); ?>
 
 </body>
 </html>

@@ -31,7 +31,6 @@ function abrirModalPendencias(tipo) {
   var titulos={ret:'Retiradas aguardando liberação',arq:'Arquivamentos aguardando aprovação',des:'Descartes aguardando análise'};
   var lista = _admPendencias[tipo]||[];
   var dest  = tipo==='ret'?'retirada-adm':tipo==='arq'?'arquivar-adm':'descarte';
-  var fnNav = tipo==='ret'?carregarRetiradasAdm.bind(null,'pendente'):tipo==='arq'?carregarArqAdm:null;
 
   if(lista.length===0){
     abrirModal(titulos[tipo],'','<div class="empty-state"><div class="empty-state-icon">'+icon('check')+'</div><p>Nenhuma pendência no momento.</p></div>',false);
@@ -61,6 +60,7 @@ function irParaPendencia(dest, cod) {
   navegar(dest);
   if(dest==='retirada-adm') carregarRetiradasAdm('pendente');
   else if(dest==='arquivar-adm') carregarArqAdm();
+  else if(dest==='descarte') carregarDescarte();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -80,9 +80,9 @@ function carregarDashUser() {
     (resultados.arq.registros||[]).forEach(function(reg){
       var cod=reg['CÓDIGO']||'—';
       if(!lotesArq[cod]) lotesArq[cod]={codigo:cod,data:reg['DATA']||'',resp:reg['RESPONSÁVEL']||'',dept:reg['DEPARTAMENTO']||'',status:reg['STATUS']||'PENDENTE',docs:[]};
-      lotesArq[cod].docs.push({ descricao: reg['DESCRIÇÃO / TIPO']||reg['ID']||'—', informacao: reg['INFORMAÇÃO']||'' });
+      lotesArq[cod].docs.push({ descricao: reg['DESCRIÇÃO / TIPO']||'—', informacao: reg['INFORMAÇÃO']||'' });
     });
-    Object.values(lotesArq).forEach(function(l){ window._LOTES[l.codigo]=l; });
+    Object.values(lotesArq).forEach(function(l){ _loteSet('arq', l.codigo, l); });
     var arqFiltrado=Object.values(lotesArq).slice(0,5);
 
     html+='<div style="margin-bottom:24px;">';
@@ -110,10 +110,10 @@ function carregarDashUser() {
         responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
         docs:[], caixas:[]
       };
-      lotesRet[cod].docs.push(reg['DESCRIÇÃO']||reg['DESCRIÇÃO / TIPO']||'—');
+      lotesRet[cod].docs.push(reg['DESCRIÇÃO']||'—');
       lotesRet[cod].caixas.push(reg['CAIXA']||'—');
     });
-    Object.values(lotesRet).forEach(function(l){ window._LOTES[l.codigo]=l; });
+    Object.values(lotesRet).forEach(function(l){ _loteSet('ret', l.codigo, l); });
     var retFiltrado=Object.values(lotesRet).slice(0,5);
 
     html+='<div>';

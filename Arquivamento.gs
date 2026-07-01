@@ -13,6 +13,21 @@
  *   M CAIXA  N MOTIVO DO CANCELAMENTO  O DATA DE VENCIMENTO
  */
 function salvarDados(dados) {
+  // SEGURANÇA: nunca confiar em responsavel/departamento enviados pelo
+  // cliente para identificar quem está criando o registro. O e-mail é
+  // conferido contra a aba "Usuários" e os campos de identidade são
+  // derivados no servidor — evita que um usuário logado personifique
+  // outra pessoa/departamento via chamada direta de google.script.run.
+  const infoU = _infoUsuario_(dados && dados.email);
+  if (!infoU.encontrado || !infoU.ativo) {
+    return { sucesso: false, erro: 'Usuário não identificado ou inativo.' };
+  }
+  dados.responsavel = infoU.nome;
+  // GED pode registrar arquivamento em nome de qualquer departamento
+  // (não há formulário dedicado por departamento); demais perfis só
+  // podem gravar no próprio departamento.
+  if (infoU.perfil !== 'GED') dados.departamento = infoU.departamento;
+
   const planilha = SpreadsheetApp.openById(SHEET_ID);
   let sheet = planilha.getSheetByName("Arquivamento");
   if (!sheet) sheet = planilha.insertSheet("Arquivamento");
@@ -21,12 +36,7 @@ function salvarDados(dados) {
   const vazio = cabecalho.every(c => c === '' || c === null);
 
   if (vazio) {
-    sheet.getRange(1, 1, 1, 15).setValues([[
-      'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
-      'CÓDIGO / ID', 'DESCRIÇÃO / TIPO', 'DATA DO DOCUMENTO',
-      'INFORMAÇÃO', 'ÁREA', 'TEMPORALIDADE',
-      'STATUS', 'CAIXA', 'MOTIVO DO CANCELAMENTO', 'DATA DE VENCIMENTO'
-    ]]);
+    sheet.getRange(1, 1, 1, 15).setValues([COLUNAS_ARQUIVAMENTO]);
     const header = sheet.getRange(1, 1, 1, 15);
     header.setBackground('#2563EB');
     header.setFontColor('#FFFFFF');

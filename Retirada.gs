@@ -8,8 +8,19 @@
  * Para perfil não-GED, filtra pelo departamento do usuário logado.
  * Marca como "em retirada" os que já possuem solicitação aberta.
  */
-function buscarDocumentosRetirada(departamento, incluirMock) {
+function buscarDocumentosRetirada(departamento, incluirMock, emailSolicitante) {
   try {
+    // SEGURANÇA: o departamento/flag de mock enviados pelo cliente só são
+    // confiáveis para o admin GED. Para os demais perfis, ignora o valor
+    // recebido e usa o departamento real do usuário (evita que alguém
+    // chame esta função diretamente pedindo o acervo de outro departamento).
+    const infoU = _infoUsuario_(emailSolicitante);
+    if (!infoU.encontrado || !infoU.ativo) return { documentos: [], erro: 'Usuário não identificado ou inativo.' };
+    if (infoU.perfil !== 'GED') {
+      departamento = infoU.departamento;
+      incluirMock  = infoU.departamento === 'Infraestrutura';
+    }
+
     const ss = SpreadsheetApp.openById(SHEET_ID);
 
     const abaRetiradas = ss.getSheetByName('Retiradas');
@@ -109,24 +120,34 @@ function buscarDocumentosRetirada(departamento, incluirMock) {
  */
 function salvarRetirada(dados) {
   try {
+    // SEGURANÇA: solicitação de retirada é sempre autoatribuída — deriva
+    // responsavel/departamento do e-mail autenticado em vez de confiar
+    // nos campos enviados pelo cliente (evita personificação).
+    const infoU = _infoUsuario_(dados && dados.email);
+    if (!infoU.encontrado || !infoU.ativo) {
+      return { sucesso: false, erro: 'Usuário não identificado ou inativo.' };
+    }
+    dados.responsavel  = infoU.nome;
+    dados.departamento = infoU.departamento;
+
     const planilha = SpreadsheetApp.openById(SHEET_ID);
     let sheet = planilha.getSheetByName("Retiradas");
     if (!sheet) sheet = planilha.insertSheet("Retiradas");
 
-    const cabecalho = sheet.getRange(1, 1, 1, 13).getValues()[0];
+    const cabecalho = sheet.getRange(1, 1, 1, 15).getValues()[0];
     const vazio = cabecalho.every(c => c === '' || c === null);
 
     if (vazio) {
-      sheet.getRange(1, 1, 1, 13).setValues([[
-        'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
-        'PROJETO', 'DESCRIÇÃO', 'CAIXA', 'MOTIVO',
-        'STATUS RETIRADA', 'DATA DE RETIRADA',
-        'STATUS DEVOLUÇÃO', 'DATA DE DEVOLUÇÃO'
-      ]]);
-      const header = sheet.getRange(1, 1, 1, 13);
+      sheet.getRange(1, 1, 1, 15).setValues([COLUNAS_RETIRADAS]);
+      const header = sheet.getRange(1, 1, 1, 15);
       header.setBackground('#7c3aed');
       header.setFontColor('#FFFFFF');
       header.setFontWeight('bold');
+    } else if (cabecalho[13] === '' || cabecalho[13] === null || cabecalho[14] === '' || cabecalho[14] === null) {
+      // Migração: aba já existia com apenas 13 colunas de cabeçalho, mas
+      // atualizarStatusLote grava adiamento (14) e motivo/justificativa (15)
+      // desde sempre — preenche os títulos que faltam sem tocar no resto.
+      sheet.getRange(1, 14, 1, 2).setValues([[COLUNAS_RETIRADAS[13], COLUNAS_RETIRADAS[14]]]);
     }
 
     const codigo       = gerarCodigoUnico('Retiradas', 'S', dados.departamento || '');
@@ -136,11 +157,11 @@ function salvarRetirada(dados) {
     const linhas = dados.documentos.map(doc => [
       codigo, agora, dados.responsavel || '', dados.email || '', dados.departamento || '',
       doc.projeto || '', doc.descricao || '', doc.caixa || '', dados.motivo || '',
-      'PENDENTE', '', '', ''
+      'PENDENTE', '', '', '', '', ''
     ]);
 
     if (linhas.length > 0) {
-      sheet.getRange(proximaLinha, 1, linhas.length, 13).setValues(linhas);
+      sheet.getRange(proximaLinha, 1, linhas.length, 15).setValues(linhas);
     }
 
     return { sucesso: true, codigo };

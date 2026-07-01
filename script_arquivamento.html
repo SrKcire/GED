@@ -32,6 +32,11 @@ var TIPOS_DOCUMENTO_USER = [
 //  ARQUIVAMENTO — FORM COMPARTILHADO
 // ══════════════════════════════════════════════════════════
 var _arqTipo='', _arqDept='';
+// ID do container de linhas do formulário. ADM e USER usam páginas
+// distintas mas sempre presentes no DOM; um id fixo compartilhado entre
+// as duas faria addLinhaArq()/coletarLinhasArq() operarem sempre na
+// primeira ocorrência no DOM (a do ADM), então cada contexto usa o seu.
+var _arqLinhasBodyId = 'arqLinhasBody';
 
 function renderizarFormArquivamento(wrapId) {
   var dept = _arqDept;
@@ -73,6 +78,7 @@ function renderizarLinhasForm() {
   var tipo=_arqTipo;
   var dept=_arqDept;
   var wrap=document.getElementById('arqFormLinhas');
+  _arqLinhasBodyId='arqLinhasBodyAdm';
 
   var cabecalho='', addLabel='Adicionar documento';
   if(tipo==='1'){
@@ -114,7 +120,7 @@ function renderizarLinhasForm() {
   wrap.innerHTML='<div class="form-section">'
     +'<div class="form-section-title">'+icon('filetext')+' Documentos</div>'
     +cabecalho
-    +'<div id="arqLinhasBody"></div>'
+    +'<div id="'+_arqLinhasBodyId+'"></div>'
     +'<button class="btn-add-row" onclick="addLinhaArq()">'+icon('plus')+' Adicionar linha</button>'
     +'</div>'
     +'<div class="form-section">'
@@ -131,7 +137,7 @@ function renderizarLinhasForm() {
 }
 
 function addLinhaArq(){
-  var body=document.getElementById('arqLinhasBody'); if(!body) return;
+  var body=document.getElementById(_arqLinhasBodyId); if(!body) return;
   var tipo=_arqTipo;
   var div=document.createElement('div'); div.className='doc-row';
   var inp=function(ph,cls){ return '<div><input class="field-input '+(cls||'')+'" placeholder="'+escA(ph)+'"></div>'; };
@@ -159,7 +165,7 @@ function addLinhaArq(){
 
 function coletarLinhasArq(){
   var tipo=_arqTipo;
-  var rows=document.querySelectorAll('#arqLinhasBody .doc-row');
+  var rows=document.querySelectorAll('#'+_arqLinhasBodyId+' .doc-row');
   var docs=[];
   rows.forEach(function(r){
     var inputs=r.querySelectorAll('input,select');
@@ -191,7 +197,7 @@ function submeterArquivamento(){
       document.getElementById('arqMsg').textContent='';
       if(r.sucesso){
         toast('Solicitação enviada! Código: '+r.codigo,'success');
-        document.getElementById('arqLinhasBody').innerHTML=''; addLinhaArq();
+        document.getElementById(_arqLinhasBodyId).innerHTML=''; addLinhaArq();
       } else { toast(r.erro||'Erro ao enviar.','error'); }
     })
     .withFailureHandler(function(){
@@ -235,7 +241,7 @@ function renderizarArqAdmLista(lotes){
     wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('check')+'</div><p>Nenhuma solicitação pendente.</p></div>';return;
   }
   wrap.innerHTML=lotes.map(function(l){
-    window._LOTES[l.codigo]=l;
+    _loteSet('arq', l.codigo, l);
     return '<div class="lote-card" style="cursor:pointer;" onclick="abrirModalArqPendente(\''+escA(l.codigo)+'\')">'
       +'<div class="lote-header">'
         +'<div><div class="lote-cod">'+esc(l.codigo)+'</div><div class="lote-meta-text">'+esc(l.responsavel)+' · '+esc(l.departamento)+' · '+esc(l.data)+'</div></div>'
@@ -246,7 +252,7 @@ function renderizarArqAdmLista(lotes){
 }
 
 function aprovarLoteArq(codigo){
-  var lote=window._LOTES[codigo];
+  var lote=_loteGet('arq', codigo);
   if(!lote){toast('Lote não encontrado. Atualize a lista.','error');return;}
   var docs=lote.documentos.map(function(d,di){
     var key=codigo+'_'+di;
@@ -310,6 +316,7 @@ function switchArqUserTab(pane){
 function carregarArqUser(){
   _arqDept=S.departamento||S.perfil||'';
   _arqTipo='';
+  _arqLinhasBodyId='arqLinhasBody';
   var respEl=document.getElementById('arqUserResp');
   var deptEl=document.getElementById('arqUserDept');
   if(respEl) respEl.value=S.nome;
@@ -379,11 +386,11 @@ function renderizarHistArq(r,wrapId,perfil){
     var codigo=reg['CÓDIGO']||'—';
     if(!lotes[codigo]) lotes[codigo]={codigo:codigo,data:reg['DATA']||'',resp:reg['RESPONSÁVEL']||'',dept:reg['DEPARTAMENTO']||'',status:reg['STATUS']||'PENDENTE',docs:[]};
     lotes[codigo].docs.push({
-      descricao:  reg['DESCRIÇÃO / TIPO']||reg['ID']||'—',
+      descricao:  reg['DESCRIÇÃO / TIPO']||'—',
       informacao: reg['INFORMAÇÃO']||''
     });
   });
-  Object.values(lotes).forEach(function(l){ window._LOTES[l.codigo]=l; });
+  Object.values(lotes).forEach(function(l){ _loteSet('arq', l.codigo, l); });
   var lotesArr=Object.values(lotes);
 
   if(perfil==='user'){
@@ -436,8 +443,9 @@ function filtrarArqHistUser(){ _renderizarArqHistTabela(_arqHistLotesCache); }
 //  MODAL SOLICITAÇÃO DE ARQUIVAMENTO (PENDENTE)
 // ══════════════════════════════════════════════════════════
 function abrirModalArqPendente(codigo) {
-  var l = window._LOTES[codigo];
+  var l = _loteGet('arq', codigo);
   if (!l) { toast('Lote não encontrado. Atualize a lista.', 'error'); return; }
+  if (!l.documentos) { toast('Detalhes indisponíveis para este lote. Atualize a lista.', 'error'); return; }
   var isSol = l.tipo === 'solicitacao';
   var thCols = isSol
     ? '<th>Setor</th><th>Tipo Sol.</th><th>ID</th><th>Data</th><th>Temporalidade</th><th>Caixa</th>'
@@ -489,7 +497,7 @@ function abrirModalArqPendente(codigo) {
 //  MODAL HISTÓRICO DE ARQUIVAMENTO
 // ══════════════════════════════════════════════════════════
 function abrirModalHistArq(cod) {
-  var l = window._LOTES[cod];
+  var l = _loteGet('arq', cod);
   if (!l) return;
   var corpo = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'
     +'<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #e2e8f0;">'

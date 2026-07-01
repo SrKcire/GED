@@ -23,7 +23,7 @@ function renderizarLotesRet(lotes,wrapId,modo){
     wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('inbox')+'</div><p>Nenhuma retirada encontrada.</p></div>';return;
   }
   wrap.innerHTML=lotes.map(function(l){
-    window._LOTES[l.codigo]=l;
+    _loteSet('ret', l.codigo, l);
     return '<div class="lote-card" style="cursor:pointer;" onclick="abrirModalRetPendente(\''+escA(l.codigo)+'\')">'
       +'<div class="lote-header">'
         +'<div><div class="lote-cod">'+esc(l.codigo)+'</div><div class="lote-meta-text">'+esc(l.responsavel)+' · '+esc(l.departamento)+' · '+esc(l.data)+'</div></div>'
@@ -34,7 +34,7 @@ function renderizarLotesRet(lotes,wrapId,modo){
 }
 
 function acaoRet(codigo,acao){
-  var lote=window._LOTES[codigo];
+  var lote=_loteGet('ret', codigo);
   if(!lote){toast('Lote não encontrado. Atualize a lista.','error');return;}
   var titulos={LIBERAR:'Liberar retirada',CANCELAR:'Cancelar retirada',ADIAR:'Adiar devolução',DEVOLVER:'Registrar devolução'};
   var cores={LIBERAR:'verde',CANCELAR:'vermelho',ADIAR:'amarelo',DEVOLVER:'verde'};
@@ -88,7 +88,7 @@ function carregarDocsRetiradaUser(){
   google.script.run.withSuccessHandler(function(r){
     _retDocsCache=r.documentos||[];
     renderizarDocsRetiradaUser(1);
-  }).buscarDocumentosRetirada(dept,mock);
+  }).buscarDocumentosRetirada(dept,mock,S.email);
 }
 
 function renderizarDocsRetiradaUser(pag){
@@ -185,10 +185,10 @@ function renderizarHistRetiradaUser(r){
       responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
       docs:[], caixas:[]
     };
-    lotes[codigo].docs.push(reg['DESCRIÇÃO']||reg['DESCRIÇÃO / TIPO']||'—');
+    lotes[codigo].docs.push(reg['DESCRIÇÃO']||'—');
     lotes[codigo].caixas.push(reg['CAIXA']||'—');
   });
-  Object.values(lotes).forEach(function(l){ window._LOTES[l.codigo]=l; });
+  Object.values(lotes).forEach(function(l){ _loteSet('ret', l.codigo, l); });
   _retHistLotesCache=Object.values(lotes);
   _renderizarRetHistTabela(_retHistLotesCache);
 }
@@ -229,7 +229,7 @@ function _renderizarRetHistTabela(lotesArr){
 function filtrarRetHistUser(){ _renderizarRetHistTabela(_retHistLotesCache); }
 
 function cancelarRetiradaUser(codigo){
-  var lote=window._LOTES[codigo];
+  var lote=_loteGet('ret', codigo);
   abrirModal('Cancelar retirada','Lote: '+codigo,
     '<div style="margin-bottom:12px;"><div class="field-label">Motivo do cancelamento</div><textarea id="motRetUser" class="field-input" style="height:70px;padding:10px;" placeholder="Informe o motivo (opcional)..."></textarea></div>',
     true,'Confirmar cancelamento','vermelho',function(){
@@ -254,8 +254,9 @@ function cancelarRetiradaUser(codigo){
 //  MODAL SOLICITAÇÃO DE RETIRADA (PENDENTE / HISTÓRICO ADM)
 // ══════════════════════════════════════════════════════════
 function abrirModalRetPendente(codigo) {
-  var l = window._LOTES[codigo];
+  var l = _loteGet('ret', codigo);
   if (!l) { toast('Lote não encontrado. Atualize a lista.', 'error'); return; }
+  if (!l.documentos) { toast('Detalhes indisponíveis para este lote. Atualize a lista.', 'error'); return; }
   var docs = l.documentos.map(function(d) {
     return '<tr><td>'+esc(d.projeto)+'</td><td>'+esc(d.descricao)+'</td><td>'+esc(d.caixa)+'</td></tr>';
   }).join('');
@@ -287,7 +288,7 @@ function abrirModalRetPendente(codigo) {
 //  MODAL HISTÓRICO DE RETIRADAS (USUÁRIO)
 // ══════════════════════════════════════════════════════════
 function abrirModalHistRetUser(cod) {
-  var l = window._LOTES[cod];
+  var l = _loteGet('ret', cod);
   if (!l) return;
   var podeCancelar = l.status === 'PENDENTE';
   var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'

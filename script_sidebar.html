@@ -10,10 +10,13 @@ var NAV_ADM = [
     {icon:'search', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
     {icon:'archive', nome:'Arquivamento', id:'arquivar-adm', fn: function(){carregarArqAdm();}},
     {icon:'upload', nome:'Retiradas', id:'retirada-adm', fn: function(){carregarRetiradasAdm('pendente');}},
-    {icon:'trash', nome:'Descarte', id:'descarte', fn:null}
+    {icon:'trash', nome:'Descarte', id:'descarte', fn: function(){carregarDescarte();}}
   ]},
   {label:'FERRAMENTAS', items:[
     {icon:'camera', nome:'Digitalização', id:'digitalizacao', fn:null}
+  ]},
+  {label:'ADMINISTRAÇÃO', items:[
+    {icon:'user', nome:'Usuários', id:'usuarios', fn: function(){carregarUsuarios();}}
   ]}
 ];
 var NAV_USER = [
@@ -24,7 +27,7 @@ var NAV_USER = [
     {icon:'search', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
     {icon:'archive', nome:'Arquivamento', id:'arquivar-user', fn: function(){carregarArqUser();}},
     {icon:'upload', nome:'Retirada', id:'retirada-user', fn: function(){carregarDocsRetiradaUser();}},
-    {icon:'trash', nome:'Descarte', id:'descarte', fn:null}
+    {icon:'trash', nome:'Descarte', id:'descarte', fn: function(){carregarDescarte();}}
   ]}
 ];
 
@@ -51,7 +54,8 @@ var TITULOS = {
   'dash-adm':'Dashboard','dash-user':'Dashboard','consulta':'Consulta ao Acervo',
   'arquivar-adm':'Arquivamento','arquivar-user':'Arquivamento',
   'retirada-adm':'Retiradas','retirada-user':'Solicitar Retirada',
-  'descarte':'Descarte de Documentos','digitalizacao':'Digitalização'
+  'descarte':'Descarte de Documentos','digitalizacao':'Digitalização',
+  'usuarios':'Usuários'
 };
 function navegar(id) {
   _paginaAtual=id;
@@ -63,7 +67,7 @@ function navegar(id) {
   document.getElementById('topbarTitle').textContent=TITULOS[id]||id;
   if(!S){location.reload();return;}
   // guard ADM
-  var admOnly=['digitalizacao'];
+  var admOnly=['digitalizacao','usuarios'];
   if(admOnly.indexOf(id)!==-1 && S.perfil!=='GED'){navegar('dash-user');toast('Acesso restrito.','error');}
 }
 

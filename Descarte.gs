@@ -11,10 +11,7 @@ function _garantirAbaDescartes_(ss) {
   let sheet = ss.getSheetByName('Descartes');
   if (!sheet) {
     sheet = ss.insertSheet('Descartes');
-    sheet.getRange(1, 1, 1, 9).setValues([[
-      'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
-      'DOCUMENTOS', 'JUSTIFICATIVA', 'STATUS', 'OBSERVAÇÃO ADM'
-    ]]);
+    sheet.getRange(1, 1, 1, 9).setValues([COLUNAS_DESCARTES]);
     const header = sheet.getRange(1, 1, 1, 9);
     header.setBackground('#dc2626');
     header.setFontColor('#FFFFFF');
@@ -36,6 +33,16 @@ function _garantirAbaDescartes_(ss) {
  */
 function solicitarDescarte(dados) {
   try {
+    // SEGURANÇA: solicitação de descarte é sempre autoatribuída — deriva
+    // responsavel/departamento do e-mail autenticado em vez de confiar
+    // nos campos enviados pelo cliente (evita personificação).
+    const infoU = _infoUsuario_(dados && dados.email);
+    if (!infoU.encontrado || !infoU.ativo) {
+      return { sucesso: false, erro: 'Usuário não identificado ou inativo.' };
+    }
+    dados.responsavel  = infoU.nome;
+    dados.departamento = infoU.departamento;
+
     const ss    = SpreadsheetApp.openById(SHEET_ID);
     const sheet = _garantirAbaDescartes_(ss);
 

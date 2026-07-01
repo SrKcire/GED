@@ -60,6 +60,44 @@ function _respostaAcessoNegado_() {
   return { ok: false, sucesso: false, erro: 'Acesso restrito ao administrador GED.', acessoNegado: true };
 }
 
+/**
+ * Busca a identidade real de um e-mail na aba "Usuários".
+ * Usado para derivar responsavel/departamento no servidor em vez de
+ * confiar em campos enviados pelo cliente (evita personificação via
+ * chamadas diretas de google.script.run).
+ *
+ * Retorna { encontrado, nome, perfil, departamento, ativo }.
+ * `ativo` é boolean. Se o e-mail não for encontrado, `encontrado` é false
+ * e os demais campos vêm vazios/false.
+ */
+function _infoUsuario_(email) {
+  const vazio = { encontrado: false, nome: '', perfil: '', departamento: '', ativo: false };
+  try {
+    if (!email) return vazio;
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("Usuários");
+    if (!sheet || sheet.getLastRow() < 2) return vazio;
+
+    const dados = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getValues();
+    const emailNorm = String(email).trim().toLowerCase();
+
+    for (const row of dados) {
+      const emailPlanilha = String(row[3] || '').trim().toLowerCase();
+      if (emailPlanilha !== emailNorm) continue;
+      const perfil = String(row[4] || '').trim();
+      return {
+        encontrado: true,
+        nome: String(row[2] || '').trim(),
+        perfil,
+        departamento: perfil === 'GED' ? 'GED' : String(row[7] || '').trim(),
+        ativo: String(row[5] || '').trim().toLowerCase() === 'sim'
+      };
+    }
+    return vazio;
+  } catch (e) {
+    return vazio;
+  }
+}
+
 
 // ───────────────────────────────────────────────────────────────────────────
 //  AUTENTICAÇÃO UNIFICADA
@@ -82,10 +120,14 @@ function _respostaAcessoNegado_() {
  */
 function verificarLogin(login, senha) {
   try {
+    if (!login || !senha || typeof login !== 'string' || typeof senha !== 'string')
+      return { status: 'erro' };
+
     const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("Usuários");
     if (!sheet) return { status: 'erro' };
 
     const dados = sheet.getDataRange().getValues();
+    const loginBuscado = login.toLowerCase();
 
     for (let i = 1; i < dados.length; i++) {
       const loginPlanilha = String(dados[i][0]).trim().toLowerCase();
@@ -97,7 +139,7 @@ function verificarLogin(login, senha) {
       const senhaAlterada = String(dados[i][6] || '').trim();
       const departamento  = String(dados[i][7] || '').trim();
 
-      if (loginPlanilha !== login.toLowerCase()) continue;
+      if (loginPlanilha !== loginBuscado) continue;
 
       // SEGURANÇA: perfil GED nunca pode autenticar com senha em texto puro.
       if (perfil === 'GED' && !senhaEhHash(senhaPlanilha)) {

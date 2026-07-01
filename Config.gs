@@ -33,6 +33,33 @@ const CC_GED = 'rafael.spinelli@csa.com.br,erick.mesquita@csa.com.br';
 // Local físico do acervo (usado no S.A.D.)
 const LOCAL_GED = 'GED (TÉRREO CD67)';
 
+// ───────────────────────────────────────────────────────────────────────────
+//  CABEÇALHOS DE PLANILHA — fonte única de verdade
+//  Usados tanto na criação da aba quanto na leitura por posição de coluna
+//  (buscarHistorico/buscarDadosEtiqueta), para que uma renomeação manual de
+//  cabeçalho na planilha não quebre silenciosamente os campos lidos pelo
+//  frontend (que espera sempre esta mesma grafia).
+// ───────────────────────────────────────────────────────────────────────────
+const COLUNAS_ARQUIVAMENTO = [
+  'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
+  'CÓDIGO / ID', 'DESCRIÇÃO / TIPO', 'DATA DO DOCUMENTO',
+  'INFORMAÇÃO', 'ÁREA', 'TEMPORALIDADE',
+  'STATUS', 'CAIXA', 'MOTIVO DO CANCELAMENTO', 'DATA DE VENCIMENTO'
+];
+
+const COLUNAS_RETIRADAS = [
+  'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
+  'PROJETO', 'DESCRIÇÃO', 'CAIXA', 'MOTIVO',
+  'STATUS RETIRADA', 'DATA DE RETIRADA',
+  'STATUS DEVOLUÇÃO', 'DATA DE DEVOLUÇÃO',
+  'DATA DE ADIAMENTO', 'MOTIVO/JUSTIFICATIVA'
+];
+
+const COLUNAS_DESCARTES = [
+  'CÓDIGO', 'DATA', 'RESPONSÁVEL', 'EMAIL', 'DEPARTAMENTO',
+  'DOCUMENTOS', 'JUSTIFICATIVA', 'STATUS', 'OBSERVAÇÃO ADM'
+];
+
 
 // ───────────────────────────────────────────────────────────────────────────
 //  PONTO DE ENTRADA ÚNICO

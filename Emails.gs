@@ -200,9 +200,9 @@ function enviarEmailCobranca5Dias(email, responsavel, codigo, dataRetirada, dias
 
     const linhasDocs = (documentos || []).map(d => `
       <tr>
-        <td style="border:1px solid #90caf9;padding:8px;">${d.projeto || '—'}</td>
-        <td style="border:1px solid #90caf9;padding:8px;">${d.descricao || '—'}</td>
-        <td style="border:1px solid #90caf9;padding:8px;text-align:center;">${d.caixa || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;">${escHtml(d.projeto) || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;">${escHtml(d.descricao) || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;text-align:center;">${escHtml(d.caixa) || '—'}</td>
       </tr>`).join('');
 
     const tabelaDocs = (documentos && documentos.length > 0) ? `
@@ -237,8 +237,8 @@ function enviarEmailCobranca5Dias(email, responsavel, codigo, dataRetirada, dias
               <th style="border:1px solid #90caf9;padding:8px;text-align:left;color:#1565c0;">Dias Úteis Decorridos</th>
             </tr>
             <tr>
-              <td style="border:1px solid #90caf9;padding:8px;"><strong>${codigo}</strong></td>
-              <td style="border:1px solid #90caf9;padding:8px;">${dataFormatada}</td>
+              <td style="border:1px solid #90caf9;padding:8px;"><strong>${escHtml(codigo)}</strong></td>
+              <td style="border:1px solid #90caf9;padding:8px;">${escHtml(dataFormatada)}</td>
               <td style="border:1px solid #90caf9;padding:8px;color:#d32f2f;font-weight:bold;">${diasUteis} dias</td>
             </tr>
           </table>
@@ -274,9 +274,9 @@ function enviarEmailCobrancaAdiamentoVencido(email, responsavel, codigo, dataAdi
 
     const linhasDocs = (documentos || []).map(d => `
       <tr>
-        <td style="border:1px solid #90caf9;padding:8px;">${d.projeto || '—'}</td>
-        <td style="border:1px solid #90caf9;padding:8px;">${d.descricao || '—'}</td>
-        <td style="border:1px solid #90caf9;padding:8px;text-align:center;">${d.caixa || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;">${escHtml(d.projeto) || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;">${escHtml(d.descricao) || '—'}</td>
+        <td style="border:1px solid #90caf9;padding:8px;text-align:center;">${escHtml(d.caixa) || '—'}</td>
       </tr>`).join('');
 
     const tabelaDocs = (documentos && documentos.length > 0) ? `
@@ -299,7 +299,7 @@ function enviarEmailCobrancaAdiamentoVencido(email, responsavel, codigo, dataAdi
           <p style="color:#495057;line-height:1.6;"><strong>Prezado(a) ${escHtml(responsavel)},</strong></p>
           <div style="background-color:#f8d7da;border:1px solid #f5c6cb;border-radius:6px;padding:15px;margin:20px 0;">
             <p style="color:#721c24;margin:0;font-weight:bold;">
-              O prazo de adiamento da retirada <strong>${escHtml(codigo)}</strong> venceu em ${dataFormatada}.<br>
+              O prazo de adiamento da retirada <strong>${escHtml(codigo)}</strong> venceu em ${escHtml(dataFormatada)}.<br>
               Por favor, devolva os documentos ao GED hoje até as 16:50.
             </p>
           </div>
@@ -309,8 +309,8 @@ function enviarEmailCobrancaAdiamentoVencido(email, responsavel, codigo, dataAdi
               <th style="border:1px solid #90caf9;padding:8px;text-align:left;color:#1565c0;">Data Limite do Adiamento</th>
             </tr>
             <tr>
-              <td style="border:1px solid #90caf9;padding:8px;"><strong>${codigo}</strong></td>
-              <td style="border:1px solid #90caf9;padding:8px;color:#d32f2f;font-weight:bold;">${dataFormatada}</td>
+              <td style="border:1px solid #90caf9;padding:8px;"><strong>${escHtml(codigo)}</strong></td>
+              <td style="border:1px solid #90caf9;padding:8px;color:#d32f2f;font-weight:bold;">${escHtml(dataFormatada)}</td>
             </tr>
           </table>
           ${tabelaDocs}

@@ -1,0 +1,156 @@
+<script>
+// ══════════════════════════════════════════════════════════
+//  USUÁRIOS (ADM only) — CRUD de acesso ao sistema
+// ══════════════════════════════════════════════════════════
+var DEPTS_USUARIO = ['Infraestrutura','Administrativo','Financeiro','RH','Pedagógico','Comunicação','TI'];
+var _usuariosCache = {}; // linha → objeto usuário, evita round-trip ao abrir modais
+
+function carregarUsuarios() {
+  var tbody = document.getElementById('usuariosTableBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto 8px;"></div>Carregando...</td></tr>';
+  google.script.run
+    .withSuccessHandler(function(r){ renderizarUsuarios(r.usuarios || []); })
+    .withFailureHandler(function(){
+      tbody.innerHTML = '<tr><td colspan="7" class="data-table-empty"><div class="dte-icon">'+icon('alert')+'</div><p style="margin-top:6px;">Erro ao carregar usuários.</p></td></tr>';
+    })
+    .listarUsuarios(S.email);
+}
+
+function renderizarUsuarios(lista) {
+  var tbody = document.getElementById('usuariosTableBody');
+  if (!lista || lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="data-table-empty"><div class="dte-icon">'+icon('inbox')+'</div><p style="margin-top:6px;">Nenhum usuário cadastrado.</p></td></tr>';
+    return;
+  }
+  _usuariosCache = {};
+  tbody.innerHTML = lista.map(function(u){
+    _usuariosCache[u.linha] = u;
+    var ativo = String(u.ativo || '').trim().toLowerCase() === 'sim';
+    return '<tr>'
+      +'<td>'+esc(u.login)+'</td>'
+      +'<td>'+esc(u.nome)+'</td>'
+      +'<td>'+esc(u.email)+'</td>'
+      +'<td>'+esc(u.perfil)+'</td>'
+      +'<td>'+esc(u.departamento || '—')+'</td>'
+      +'<td>'+(ativo ? '<span class="badge-status bs-aprovado">Ativo</span>' : '<span class="badge-status bs-cancelado">Inativo</span>')+'</td>'
+      +'<td style="white-space:nowrap;display:flex;gap:6px;">'
+        +'<button class="btn-copy-cx" title="Editar" onclick="abrirModalUsuario('+u.linha+')">'+icon('edit')+'</button>'
+        +'<button class="btn-copy-cx" title="Redefinir senha" onclick="abrirModalRedefinirSenha('+u.linha+')">'+icon('key')+'</button>'
+        +'<button class="btn-copy-cx" title="'+(ativo?'Desativar':'Ativar')+'" onclick="toggleAtivoUsuario('+u.linha+',\''+(ativo?'Não':'Sim')+'\')">'+icon(ativo?'x':'check')+'</button>'
+        +'<button class="btn-copy-cx" title="Excluir" onclick="confirmarExcluirUsuario('+u.linha+')">'+icon('trash')+'</button>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function _toggleDeptUsuario() {
+  var perfilSel = document.getElementById('uPerfil');
+  var deptWrap  = document.getElementById('uDeptWrap');
+  if (!perfilSel || !deptWrap) return;
+  deptWrap.style.display = perfilSel.value === 'GED' ? 'none' : '';
+}
+
+function abrirModalUsuario(linha) {
+  var u = linha ? _usuariosCache[linha] : null;
+  var isEdit = !!u;
+  var deptOpts = DEPTS_USUARIO.map(function(d){ return '<option value="'+escA(d)+'">'+esc(d)+'</option>'; }).join('');
+
+  var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +'<div class="field-block"><label>Login</label><input class="field-input" id="uLogin" value="'+(u?escA(u.login):'')+'"></div>'
+    +(isEdit ? '' : '<div class="field-block"><label>Senha inicial</label><input class="field-input" id="uSenha" type="password" placeholder="Mínimo 6 caracteres"></div>')
+    +'<div class="field-block"><label>Nome</label><input class="field-input" id="uNome" value="'+(u?escA(u.nome):'')+'"></div>'
+    +'<div class="field-block"><label>E-mail</label><input class="field-input" id="uEmail" type="email" value="'+(u?escA(u.email):'')+'"></div>'
+    +'<div class="field-block"><label>Perfil</label><select class="field-select" id="uPerfil" onchange="_toggleDeptUsuario()"><option value="GED">GED (Administrador)</option><option value="Usuário">Usuário (Departamento)</option></select></div>'
+    +'<div class="field-block" id="uDeptWrap"><label>Departamento</label><select class="field-select" id="uDepartamento">'+deptOpts+'</select></div>'
+    +'<div class="field-block"><label>Status</label><select class="field-select" id="uAtivo"><option value="Sim">Ativo</option><option value="Não">Inativo</option></select></div>'
+    +'</div>';
+
+  abrirModal(isEdit ? 'Editar usuário' : 'Novo usuário', isEdit ? u.login : '', corpo, true, isEdit ? 'Salvar' : 'Criar', '', function(){ salvarUsuario(linha); }, '620px');
+
+  // Preenche os selects após o corpo entrar no DOM (abrirModal já fez innerHTML=corpo antes deste callback rodar)
+  var perfilSel = document.getElementById('uPerfil');
+  var deptSel   = document.getElementById('uDepartamento');
+  var ativoSel  = document.getElementById('uAtivo');
+  if (u) {
+    perfilSel.value = (u.perfil === 'GED') ? 'GED' : 'Usuário';
+    deptSel.value   = u.departamento || '';
+    ativoSel.value  = (String(u.ativo || '').trim().toLowerCase() === 'sim') ? 'Sim' : 'Não';
+  }
+  _toggleDeptUsuario();
+}
+
+function salvarUsuario(linha) {
+  var login = document.getElementById('uLogin').value.trim();
+  var nome  = document.getElementById('uNome').value.trim();
+  var email = document.getElementById('uEmail').value.trim();
+  var perfil = document.getElementById('uPerfil').value;
+  var departamento = perfil === 'GED' ? '' : document.getElementById('uDepartamento').value;
+  var ativo = document.getElementById('uAtivo').value;
+
+  if (!login || !nome || !email) { toast('Preencha login, nome e e-mail.', 'error'); return; }
+  if (perfil !== 'GED' && !departamento) { toast('Selecione o departamento.', 'error'); return; }
+
+  if (!linha) {
+    var senha = document.getElementById('uSenha').value;
+    if (!senha || senha.length < 6) { toast('A senha inicial deve ter pelo menos 6 caracteres.', 'error'); return; }
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r.sucesso) { toast('Usuário criado.', 'success'); carregarUsuarios(); }
+        else toast(r.erro || 'Erro.', 'error');
+      })
+      .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+      .criarUsuario({ login:login, senha:senha, nome:nome, email:email, perfil:perfil, ativo:ativo, departamento:departamento }, S.email);
+  } else {
+    google.script.run
+      .withSuccessHandler(function(r){
+        if (r.sucesso) { toast('Usuário atualizado.', 'success'); carregarUsuarios(); }
+        else toast(r.erro || 'Erro.', 'error');
+      })
+      .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+      .atualizarUsuario(linha, { login:login, nome:nome, email:email, perfil:perfil, ativo:ativo, departamento:departamento }, S.email);
+  }
+}
+
+function abrirModalRedefinirSenha(linha) {
+  var u = _usuariosCache[linha];
+  if (!u) { toast('Usuário não encontrado. Atualize a lista.', 'error'); return; }
+  abrirModal('Redefinir senha', u.login,
+    '<div class="field-block"><label>Nova senha</label><input class="field-input" id="uNovaSenha" type="password" placeholder="Mínimo 6 caracteres"></div>',
+    true, 'Redefinir', '', function(){
+      var senha = document.getElementById('uNovaSenha').value;
+      if (!senha || senha.length < 6) { toast('A senha deve ter pelo menos 6 caracteres.', 'error'); return; }
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r.sucesso) toast('Senha redefinida.', 'success');
+          else toast(r.erro || 'Erro.', 'error');
+        })
+        .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+        .redefinirSenhaAdm(linha, senha, S.email);
+    });
+}
+
+function toggleAtivoUsuario(linha, novoStatus) {
+  google.script.run
+    .withSuccessHandler(function(r){
+      if (r.sucesso) { toast(novoStatus==='Sim' ? 'Usuário ativado.' : 'Usuário desativado.', 'success'); carregarUsuarios(); }
+      else toast(r.erro || 'Erro.', 'error');
+    })
+    .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+    .toggleUsuarioAtivo(linha, novoStatus, S.email);
+}
+
+function confirmarExcluirUsuario(linha) {
+  var u = _usuariosCache[linha];
+  abrirModal('Excluir usuário', u ? u.login : '',
+    '<p style="font-size:.88rem;color:var(--texto);">Esta ação remove o usuário permanentemente do sistema. Deseja continuar?</p>',
+    true, 'Excluir', 'vermelho', function(){
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r.sucesso) { toast('Usuário excluído.', 'info'); carregarUsuarios(); }
+          else toast(r.erro || 'Erro.', 'error');
+        })
+        .withFailureHandler(function(){ toast('Erro de conexão.', 'error'); })
+        .deletarUsuario(linha, S.email);
+    });
+}
+</script>

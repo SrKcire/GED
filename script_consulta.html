@@ -80,7 +80,7 @@ function buscarConsulta(pag) {
 
   // Busca física (acervo do dept) — função dedicada à consulta, sem filtro de bloqueio de retirada
   google.script.run.withSuccessHandler(function(r){ resultados.fisico=r; cruzar(); })
-    .buscarAcervoFisicoConsulta(dept, S.departamento==='Infraestrutura'||S.perfil==='GED');
+    .buscarAcervoFisicoConsulta(dept, S.departamento==='Infraestrutura'||S.perfil==='GED', S.email);
 }
 
 function aplicarFiltroTipoConsulta(pag){
