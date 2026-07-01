@@ -20,7 +20,7 @@ function carregarRetiradasAdm(modo){
 function renderizarLotesRet(lotes,wrapId,modo){
   var wrap=document.getElementById(wrapId);
   if(!lotes||lotes.length===0){
-    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhuma retirada encontrada.</p></div>';return;
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('inbox')+'</div><p>Nenhuma retirada encontrada.</p></div>';return;
   }
   wrap.innerHTML=lotes.map(function(l){
     window._LOTES[l.codigo]=l;
@@ -98,7 +98,7 @@ function renderizarDocsRetiradaUser(pag){
   var pagEl=document.getElementById('retDocsPaginacao');
   if(!_retDocsCache||_retDocsCache.length===0){
     if(countEl) countEl.textContent='';
-    if(wrap) wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum documento disponível.</p></div>';
+    if(wrap) wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('inbox')+'</div><p>Nenhum documento disponível.</p></div>';
     if(pagEl) pagEl.innerHTML='';
     return;
   }
@@ -109,7 +109,7 @@ function renderizarDocsRetiradaUser(pag){
   }):_retDocsCache;
   if(countEl) countEl.textContent=_retDocsCache.length+' documento(s) disponíveis'+(filterVal?' · '+listaFull.length+' filtrado(s)':'');
   if(!wrap) return;
-  if(listaFull.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Nenhum resultado para o filtro.</p></div>';if(pagEl) pagEl.innerHTML='';return;}
+  if(listaFull.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('search')+'</div><p>Nenhum resultado para o filtro.</p></div>';if(pagEl) pagEl.innerHTML='';return;}
 
   var por=20, totalPg=Math.ceil(listaFull.length/por);
   if(pag>totalPg) pag=totalPg;
@@ -123,12 +123,12 @@ function renderizarDocsRetiradaUser(pag){
     var marcado=_retDocsSelecionados[realIdx]?'checked':'';
     return '<div class="doc-list-item '+(bloq?'bloqueado':'')+'">'
       +'<input type="checkbox" class="doc-list-check" id="retDoc'+realIdx+'" '+marcado+' '+(bloq?'disabled':'')+' onchange="_retDocsSelecionados['+realIdx+']=this.checked;">'
-      +'<div class="doc-list-icon">📄</div>'
+      +'<div class="doc-list-icon">'+icon('filetext')+'</div>'
       +'<div class="doc-list-info">'
         +'<div class="doc-list-name">'+esc(d.descricao)+'</div>'
         +'<div class="doc-list-meta">'
           +'<span><span style="background:#FEF3C7;color:#92400E;padding:1px 8px;border-radius:4px;font-size:.65rem;font-weight:700;font-family:\'Montserrat\',sans-serif;">'+esc(proj)+'</span></span>'
-          +'<span style="color:#92400E;font-size:.73rem;">📦 Caixa: '+esc(String(d.caixa||'—'))+'</span>'
+          +'<span style="color:#92400E;font-size:.73rem;display:inline-flex;align-items:center;gap:3px;">'+icon('package')+' Caixa: '+esc(String(d.caixa||'—'))+'</span>'
         +'</div>'
       +'</div>'
       +(bloq?'<span class="badge-status bs-em_andamento" style="font-size:.65rem;white-space:nowrap;">Em retirada</span>':'')
@@ -210,7 +210,7 @@ function _renderizarRetHistTabela(lotesArr){
   var footer=document.getElementById('retHistTableFooter');
   if(!tbody) return;
   if(lista.length===0){
-    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">'+icon('search')+'</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
     if(footer) footer.textContent='Mostrando 0-0 de 0 solicitação(ões)'; return;
   }
   tbody.innerHTML=lista.map(function(l){
@@ -261,11 +261,11 @@ function abrirModalRetPendente(codigo) {
   }).join('');
   var acoes = '';
   if (l.statusRetirada === 'PENDENTE') {
-    acoes = '<button class="btn-acao btn-liberar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'LIBERAR\')">✅ Liberar</button>'
-      +'<button class="btn-acao btn-cancelar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'CANCELAR\')">✕ Cancelar</button>';
+    acoes = '<button class="btn-acao btn-liberar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'LIBERAR\')">'+icon('check')+' Liberar</button>'
+      +'<button class="btn-acao btn-cancelar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'CANCELAR\')">'+icon('x')+' Cancelar</button>';
   } else if (l.statusRetirada === 'LIBERADO' && l.statusDevolucao === 'PENDENTE') {
-    acoes = '<button class="btn-acao btn-devolver" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'DEVOLVER\')">↩ Registrar devolução</button>'
-      +'<button class="btn-acao btn-adiar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'ADIAR\')">📅 Adiar</button>';
+    acoes = '<button class="btn-acao btn-devolver" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'DEVOLVER\')">'+icon('undo')+' Registrar devolução</button>'
+      +'<button class="btn-acao btn-adiar" onclick="fecharModal();acaoRet(\''+escA(codigo)+'\',\'ADIAR\')">'+icon('calendar')+' Adiar</button>';
   }
   var corpo = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
     +'<div><div class="field-label">Responsável</div><div style="font-size:.88rem;font-weight:600;color:var(--texto);">'+esc(l.responsavel)+'</div></div>'

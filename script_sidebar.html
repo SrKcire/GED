@@ -4,27 +4,27 @@
 // ══════════════════════════════════════════════════════════
 var NAV_ADM = [
   {label:'INÍCIO', items:[
-    {icon:'📊', nome:'Dashboard', id:'dash-adm', fn: function(){carregarDashAdm();}}
+    {icon:'dashboard', nome:'Dashboard', id:'dash-adm', fn: function(){carregarDashAdm();}}
   ]},
   {label:'DOCUMENTOS', items:[
-    {icon:'🔍', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
-    {icon:'🗄', nome:'Arquivamento', id:'arquivar-adm', fn: function(){carregarArqAdm();}},
-    {icon:'📤', nome:'Retiradas', id:'retirada-adm', fn: function(){carregarRetiradasAdm('pendente');}},
-    {icon:'🗑', nome:'Descarte', id:'descarte', fn:null}
+    {icon:'search', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
+    {icon:'archive', nome:'Arquivamento', id:'arquivar-adm', fn: function(){carregarArqAdm();}},
+    {icon:'upload', nome:'Retiradas', id:'retirada-adm', fn: function(){carregarRetiradasAdm('pendente');}},
+    {icon:'trash', nome:'Descarte', id:'descarte', fn:null}
   ]},
   {label:'FERRAMENTAS', items:[
-    {icon:'📷', nome:'Digitalização', id:'digitalizacao', fn:null}
+    {icon:'camera', nome:'Digitalização', id:'digitalizacao', fn:null}
   ]}
 ];
 var NAV_USER = [
   {label:'INÍCIO', items:[
-    {icon:'📊', nome:'Dashboard', id:'dash-user', fn: function(){carregarDashUser();}}
+    {icon:'dashboard', nome:'Dashboard', id:'dash-user', fn: function(){carregarDashUser();}}
   ]},
   {label:'DOCUMENTOS', items:[
-    {icon:'🔍', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
-    {icon:'🗄', nome:'Arquivamento', id:'arquivar-user', fn: function(){carregarArqUser();}},
-    {icon:'📤', nome:'Retirada', id:'retirada-user', fn: function(){carregarDocsRetiradaUser();}},
-    {icon:'🗑', nome:'Descarte', id:'descarte', fn:null}
+    {icon:'search', nome:'Consulta ao Acervo', id:'consulta', fn: function(){prepararConsulta();}},
+    {icon:'archive', nome:'Arquivamento', id:'arquivar-user', fn: function(){carregarArqUser();}},
+    {icon:'upload', nome:'Retirada', id:'retirada-user', fn: function(){carregarDocsRetiradaUser();}},
+    {icon:'trash', nome:'Descarte', id:'descarte', fn:null}
   ]}
 ];
 
@@ -37,7 +37,7 @@ function montarSidebar() {
     nav.appendChild(lbl);
     g.items.forEach(function(item){
       var el=document.createElement('div'); el.className='nav-item'; el.id='nav-'+item.id;
-      el.innerHTML='<span class="nav-icon">'+item.icon+'</span>'+esc(item.nome);
+      el.innerHTML='<span class="nav-icon">'+icon(item.icon)+'</span>'+esc(item.nome);
       el.addEventListener('click', function(){ navegar(item.id); if(item.fn) item.fn(); });
       nav.appendChild(el);
     });

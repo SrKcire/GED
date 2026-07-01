@@ -6,7 +6,11 @@ document.getElementById('iSenha').addEventListener('keydown', function(e){ if(e.
 document.getElementById('iLogin').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('iSenha').focus(); });
 document.getElementById('btnEntrar').addEventListener('click', fazerLogin);
 document.getElementById('btnShowPwd').addEventListener('click', function(){
-  var i = document.getElementById('iSenha'); i.type = i.type==='password'?'text':'password';
+  var i = document.getElementById('iSenha');
+  var showing = i.type==='password';
+  i.type = showing?'text':'password';
+  this.setAttribute('data-icon', showing?'eyeoff':'eye');
+  renderStaticIcons(this.parentNode);
 });
 
 function fazerLogin() {
@@ -73,10 +77,6 @@ function iniciarSistema() {
   document.getElementById('userNome').textContent = S.nome;
   document.getElementById('userPerfil').textContent = S.perfil==='GED' ? 'Administrador GED' : (S.departamento||S.perfil);
   document.getElementById('userAvatar').textContent = S.nome.charAt(0).toUpperCase();
-
-  var badge = document.getElementById('sidebarPerfilBadge');
-  if (S.perfil==='GED') { badge.textContent='🔑 Administrador GED'; badge.className='sidebar-perfil ged'; }
-  else { badge.textContent='👤 '+(S.departamento||S.perfil||'Usuário'); badge.className='sidebar-perfil user'; }
 
   if (S.perfil!=='GED' && S.departamento) {
     var d=document.getElementById('topbarDept'); d.textContent=S.departamento; d.style.display='';

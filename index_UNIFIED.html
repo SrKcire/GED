@@ -201,16 +201,16 @@
       <div class="login-field">
         <label>Login</label>
         <div class="login-input-wrap">
-          <span class="input-icon">👤</span>
+          <span class="input-icon" data-icon="user"></span>
           <input type="text" id="iLogin" placeholder="Seu login" autocomplete="username">
         </div>
       </div>
       <div class="login-field">
         <label>Senha</label>
         <div class="login-input-wrap">
-          <span class="input-icon">🔒</span>
+          <span class="input-icon" data-icon="lock"></span>
           <input type="password" id="iSenha" placeholder="Sua senha" autocomplete="current-password">
-          <button class="login-show-pwd" id="btnShowPwd">👁</button>
+          <button class="login-show-pwd" id="btnShowPwd" data-icon="eye"></button>
         </div>
       </div>
       <div class="login-erro" id="loginErro"></div>
@@ -223,7 +223,7 @@
 <!-- ══════════════ MODAL TROCA SENHA ══════════════ -->
 <div id="modalTrocaSenha">
   <div class="troca-card">
-    <h3>🔐 Troca de senha obrigatória</h3>
+    <h3><span data-icon="lock" style="margin-right:6px;"></span>Troca de senha obrigatória</h3>
     <p>Por segurança, defina uma nova senha antes de continuar. Mínimo 6 caracteres.</p>
     <div class="troca-campo">
       <label>Senha atual</label>
@@ -259,11 +259,10 @@
         <span>Gestão Eletrônica de Documentos</span>
       </div>
     </div>
-    <div class="sidebar-perfil" id="sidebarPerfilBadge"></div>
     <div class="sidebar-nav" id="sidebarNav"></div>
     <div style="margin-top:auto;">
       <div id="sairPanel" style="max-height:0;overflow:hidden;transition:max-height .25s;padding:0 10px;">
-        <button class="btn-sair" onclick="fazerLogout()">⬅ Sair do sistema</button>
+        <button class="btn-sair" onclick="fazerLogout()"><span data-icon="logout" style="margin-right:6px;"></span>Sair do sistema</button>
       </div>
       <div class="sidebar-user" id="sidebarUserBtn">
         <div class="user-avatar" id="userAvatar">?</div>
@@ -281,7 +280,8 @@
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <button id="hamburgerBtn" onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarBackdrop').classList.toggle('show')" style="display:none;background:none;border:none;cursor:pointer;color:#64748b;font-size:1.3rem;padding:4px 8px;margin-right:6px;line-height:1;">☰</button>
+      <button id="hamburgerBtn" onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarBackdrop').classList.toggle('show')" style="display:none;background:none;border:none;cursor:pointer;color:#64748b;font-size:1.3rem;padding:4px 8px;margin-right:6px;line-height:1;" data-icon="menu"></button>
+      <span class="topbar-date" id="topbarDate"></span>
       <span class="topbar-title" id="topbarTitle" style="display:none;">—</span>
       <span id="topbarDept" class="topbar-dept" style="display:none;"></span>
       <div class="topbar-dot" style="margin-left:auto;"></div>
@@ -309,7 +309,7 @@
         <div class="dash-section-title" style="margin-top:28px;">Atividades pendentes</div>
         <div class="pendencias-grid" id="pendenciasGrid">
           <div class="pendencia-card" onclick="abrirModalPendencias('ret')">
-            <div class="pendencia-icon pi-ret">📤</div>
+            <div class="pendencia-icon pi-ret" data-icon="upload"></div>
             <div style="flex:1;">
               <div class="pendencia-num" id="pNumRet">—</div>
               <div class="pendencia-label">Retiradas aguardando liberação</div>
@@ -317,7 +317,7 @@
             <span class="pendencia-link">Ver ›</span>
           </div>
           <div class="pendencia-card" onclick="abrirModalPendencias('arq')">
-            <div class="pendencia-icon pi-arq">🗄</div>
+            <div class="pendencia-icon pi-arq" data-icon="archive"></div>
             <div style="flex:1;">
               <div class="pendencia-num" id="pNumArq">—</div>
               <div class="pendencia-label">Arquivamentos aguardando aprovação</div>
@@ -325,7 +325,7 @@
             <span class="pendencia-link">Ver ›</span>
           </div>
           <div class="pendencia-card" onclick="abrirModalPendencias('des')">
-            <div class="pendencia-icon pi-des">🗑</div>
+            <div class="pendencia-icon pi-des" data-icon="trash"></div>
             <div style="flex:1;">
               <div class="pendencia-num" id="pNumDes">—</div>
               <div class="pendencia-label">Descartes aguardando análise</div>
@@ -348,23 +348,23 @@
       <div class="page" id="page-consulta">
         <div class="page-v2-header" style="margin-bottom:18px;">
           <div>
-            <h1 class="page-v2-title">🔍 Consulta de Documentos</h1>
+            <h1 class="page-v2-title"><span data-icon="search" style="margin-right:8px;"></span>Consulta de Documentos</h1>
             <p class="page-v2-sub" id="consultaSubtitle">Pesquise por qualquer parte do nome do arquivo no acervo.</p>
           </div>
         </div>
         <div class="section-card" style="margin-bottom:16px;">
           <div style="display:flex;gap:10px;align-items:center;">
             <div class="filter-bar-wrap" style="flex:1;">
-              <span class="fi">🔍</span>
+              <span class="fi" data-icon="search"></span>
               <input type="text" id="consultaInput" class="filter-bar-input" placeholder="Digite o nome do documento, projeto ou empresa..." onkeydown="if(event.key==='Enter')buscarConsulta(1)">
-              <button id="consultaClearBtn" onclick="limparConsulta()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;display:none;">✕</button>
+              <button id="consultaClearBtn" onclick="limparConsulta()" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem;display:none;" data-icon="x"></button>
             </div>
             <button onclick="buscarConsulta(1)" class="btn-primary">Buscar</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
             <span style="font-size:.72rem;font-weight:700;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.04em;">Tipo:</span>
-            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="fisico" onclick="filtrarTipoConsulta('fisico')">📦 Físico</button>
-            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="digital" onclick="filtrarTipoConsulta('digital')">💻 Digital</button>
+            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="fisico" onclick="filtrarTipoConsulta('fisico')"><span data-icon="package" style="margin-right:5px;"></span>Físico</button>
+            <button type="button" class="tab-action-btn consulta-tipo-btn" data-tipo="digital" onclick="filtrarTipoConsulta('digital')"><span data-icon="monitor" style="margin-right:5px;"></span>Digital</button>
           </div>
         </div>
         <div id="consultaResultados"></div>
@@ -378,9 +378,9 @@
           <p>Gerencie solicitações e faça novos arquivamentos.</p>
         </div>
         <div class="tabs">
-          <button class="tab-btn active" data-tab="arq-adm-aprovar" onclick="switchTab(this,'arq-adm')">📋 Solicitações pendentes</button>
-          <button class="tab-btn" data-tab="arq-adm-novo" onclick="switchTab(this,'arq-adm')">➕ Nova solicitação</button>
-          <button class="tab-btn" data-tab="arq-adm-hist" onclick="switchTab(this,'arq-adm');carregarHistArq('adm')">📁 Histórico</button>
+          <button class="tab-btn active" data-tab="arq-adm-aprovar" onclick="switchTab(this,'arq-adm')"><span data-icon="clipboard" style="margin-right:5px;"></span>Solicitações pendentes</button>
+          <button class="tab-btn" data-tab="arq-adm-novo" onclick="switchTab(this,'arq-adm')"><span data-icon="plus" style="margin-right:5px;"></span>Nova solicitação</button>
+          <button class="tab-btn" data-tab="arq-adm-hist" onclick="switchTab(this,'arq-adm');carregarHistArq('adm')"><span data-icon="folder" style="margin-right:5px;"></span>Histórico</button>
         </div>
         <!-- Aba: Aprovar -->
         <div class="tab-pane active" id="arq-adm-aprovar">
@@ -404,8 +404,8 @@
             <p class="page-v2-sub">Preencha os dados e registre os documentos para arquivamento.</p>
           </div>
           <div class="tab-action-btns">
-            <button class="tab-action-btn active gold" id="tabArqUserForm" onclick="switchArqUserTab('form')">⭐ Formulário</button>
-            <button class="tab-action-btn" id="tabArqUserHist" onclick="switchArqUserTab('hist');carregarHistArq('user')">🕐 Histórico</button>
+            <button class="tab-action-btn active gold" id="tabArqUserForm" onclick="switchArqUserTab('form')"><span data-icon="star" style="margin-right:5px;"></span>Formulário</button>
+            <button class="tab-action-btn" id="tabArqUserHist" onclick="switchArqUserTab('hist');carregarHistArq('user')"><span data-icon="clock" style="margin-right:5px;"></span>Histórico</button>
           </div>
         </div>
         <!-- Formulário -->
@@ -433,7 +433,7 @@
           </div>
           <div id="arqUserDocsArea">
             <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
-              <div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">📄</div>
+              <div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;" data-icon="filetext"></div>
               <p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p>
             </div>
           </div>
@@ -444,8 +444,8 @@
         <!-- Histórico -->
         <div id="arq-user-hist-pane" style="display:none;">
           <div class="filter-bar">
-            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="arqHistFilter" placeholder="Filtrar por código, tipo, data..." oninput="filtrarArqHistUser()"></div>
-            <button class="btn-atualizar" onclick="carregarHistArq('user')">🔁 Atualizar</button>
+            <div class="filter-bar-wrap"><span class="fi" data-icon="search"></span><input type="text" class="filter-bar-input" id="arqHistFilter" placeholder="Filtrar por código, tipo, data..." oninput="filtrarArqHistUser()"></div>
+            <button class="btn-atualizar" onclick="carregarHistArq('user')"><span data-icon="refresh" style="margin-right:5px;"></span>Atualizar</button>
           </div>
           <div class="stats-chips">
             <div class="stat-chip"><div class="sc-num" id="scArqOps">0</div><div class="sc-lbl">Operações</div></div>
@@ -454,7 +454,7 @@
           <div class="data-table-wrap">
             <table class="data-table">
               <thead><tr><th>Código</th><th>Data</th><th>Tipo / Descrição</th><th>Docs</th><th>Status</th><th>Ações</th></tr></thead>
-              <tbody id="arqHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
+              <tbody id="arqHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon" data-icon="search"></div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
             </table>
             <div class="data-table-footer" id="arqHistTableFooter">Mostrando 0-0 de 0 operação(ões)</div>
           </div>
@@ -468,8 +468,8 @@
           <p>Gerencie as solicitações recebidas.</p>
         </div>
         <div class="tabs">
-          <button class="tab-btn active" data-tab="ret-adm-pend" onclick="switchTab(this,'ret-adm')">⏳ Pendentes</button>
-          <button class="tab-btn" data-tab="ret-adm-hist" onclick="switchTab(this,'ret-adm');carregarRetiradasAdm('historico')">📁 Histórico</button>
+          <button class="tab-btn active" data-tab="ret-adm-pend" onclick="switchTab(this,'ret-adm')"><span data-icon="clock" style="margin-right:5px;"></span>Pendentes</button>
+          <button class="tab-btn" data-tab="ret-adm-hist" onclick="switchTab(this,'ret-adm');carregarRetiradasAdm('historico')"><span data-icon="folder" style="margin-right:5px;"></span>Histórico</button>
         </div>
         <div class="tab-pane active" id="ret-adm-pend">
           <!-- Filtro de setor -->
@@ -496,8 +496,8 @@
             <p class="page-v2-sub">Solicite a retirada de documentos do departamento.</p>
           </div>
           <div class="tab-action-btns">
-            <button class="tab-action-btn active red" id="tabRetUserSol" onclick="switchRetUserTab('sol')">📥 Solicitar</button>
-            <button class="tab-action-btn" id="tabRetUserHist" onclick="switchRetUserTab('hist');carregarHistRetiradaUser()">🕐 Histórico</button>
+            <button class="tab-action-btn active red" id="tabRetUserSol" onclick="switchRetUserTab('sol')"><span data-icon="inbox" style="margin-right:5px;"></span>Solicitar</button>
+            <button class="tab-action-btn" id="tabRetUserHist" onclick="switchRetUserTab('hist');carregarHistRetiradaUser()"><span data-icon="clock" style="margin-right:5px;"></span>Histórico</button>
           </div>
         </div>
         <!-- Solicitar -->
@@ -513,8 +513,8 @@
             </div>
           </div>
           <div class="filter-bar">
-            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="retDocsFilter" placeholder="Filtrar por descrição, projeto ou caixa..." oninput="filtrarDocsRetUser()"></div>
-            <button class="btn-atualizar" onclick="carregarDocsRetiradaUser()">🔁 Atualizar</button>
+            <div class="filter-bar-wrap"><span class="fi" data-icon="search"></span><input type="text" class="filter-bar-input" id="retDocsFilter" placeholder="Filtrar por descrição, projeto ou caixa..." oninput="filtrarDocsRetUser()"></div>
+            <button class="btn-atualizar" onclick="carregarDocsRetiradaUser()"><span data-icon="refresh" style="margin-right:5px;"></span>Atualizar</button>
           </div>
           <div class="doc-count-label" id="retDocCount"></div>
           <div class="doc-list-v2" id="retDocsLista"></div>
@@ -527,8 +527,8 @@
         <!-- Histórico -->
         <div id="ret-user-hist-pane" style="display:none;">
           <div class="filter-bar">
-            <div class="filter-bar-wrap"><span class="fi">🔍</span><input type="text" class="filter-bar-input" id="retHistFilter" placeholder="Filtrar por código, documento, status..." oninput="filtrarRetHistUser()"></div>
-            <button class="btn-atualizar" onclick="carregarHistRetiradaUser()">🔁 Atualizar</button>
+            <div class="filter-bar-wrap"><span class="fi" data-icon="search"></span><input type="text" class="filter-bar-input" id="retHistFilter" placeholder="Filtrar por código, documento, status..." oninput="filtrarRetHistUser()"></div>
+            <button class="btn-atualizar" onclick="carregarHistRetiradaUser()"><span data-icon="refresh" style="margin-right:5px;"></span>Atualizar</button>
           </div>
           <div class="stats-chips">
             <div class="stat-chip"><div class="sc-num" id="scRetSol">0</div><div class="sc-lbl">Solicitações</div></div>
@@ -539,7 +539,7 @@
           <div class="data-table-wrap">
             <table class="data-table">
               <thead><tr><th>Código</th><th>Data</th><th>Documento</th><th>Caixa</th><th>Retirada</th><th>Devolução</th></tr></thead>
-              <tbody id="retHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
+              <tbody id="retHistTableBody"><tr><td colspan="6" class="data-table-empty"><div class="dte-icon" data-icon="search"></div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr></tbody>
             </table>
             <div class="data-table-footer" id="retHistTableFooter">Mostrando 0-0 de 0 solicitação(ões)</div>
           </div>
@@ -552,7 +552,7 @@
           <h1>Descarte de Documentos</h1>
         </div>
         <div class="em-dev">
-          <div class="em-dev-icon">🚧</div>
+          <div class="em-dev-icon" data-icon="tool"></div>
           <h2>Em desenvolvimento</h2>
           <p>Esta funcionalidade estará disponível em breve. Acompanhe as atualizações do sistema GED.</p>
           <span class="em-dev-badge">Em breve</span>
@@ -565,7 +565,7 @@
           <h1>Digitalização</h1>
         </div>
         <div class="em-dev">
-          <div class="em-dev-icon">📷</div>
+          <div class="em-dev-icon" data-icon="camera"></div>
           <h2>Em desenvolvimento</h2>
           <p>O módulo de digitalização de dossiês de alunos estará disponível em breve.</p>
           <span class="em-dev-badge">Em breve</span>
@@ -584,7 +584,7 @@
         <div id="modalTitulo" class="modal-title"></div>
         <div id="modalSub" class="modal-sub"></div>
       </div>
-      <button onclick="fecharModal()" class="modal-close-btn">✕</button>
+      <button onclick="fecharModal()" class="modal-close-btn" data-icon="x"></button>
     </div>
     <div id="modalCorpo"></div>
     <div id="modalBtns" class="modal-btns">
@@ -600,7 +600,7 @@
     <div class="preview-header">
       <div id="previewTitulo" class="preview-titulo"></div>
       <div class="preview-actions">
-        <button onclick="fecharPreview()" class="modal-close-btn">✕</button>
+        <button onclick="fecharPreview()" class="modal-close-btn" data-icon="x"></button>
       </div>
     </div>
     <div class="preview-frame-wrap">

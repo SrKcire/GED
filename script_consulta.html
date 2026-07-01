@@ -106,20 +106,20 @@ function renderizarConsulta(pag) {
   var total=_consultaResultados.length;
 
   if(total===0){
-    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>'+(_consultaTermo?'Nenhum resultado para "'+esc(_consultaTermo)+'".':'Digite um termo para buscar.')+'</p></div>';
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('search')+'</div><p>'+(_consultaTermo?'Nenhum resultado para "'+esc(_consultaTermo)+'".':'Digite um termo para buscar.')+'</p></div>';
     pagEl.innerHTML=''; return;
   }
 
   wrap.innerHTML=slice.map(function(d){
     return '<div class="result-card">'
-      +'<div class="result-icon">'+(d.tipo==='digital'?'💻':d.tipo==='ambos'?'📎':'📦')+'</div>'
+      +'<div class="result-icon">'+(d.tipo==='digital'?icon('monitor'):d.tipo==='ambos'?icon('paperclip'):icon('package'))+'</div>'
       +'<div class="result-info">'
         +'<div class="result-nome">'+esc(d.nome)+'</div>'
         +'<div class="result-meta">'
           +tagTipo(d.tipo)
-          +(d.pasta&&d.tipo!=='digital'?'<span>📁 '+esc(d.pasta)+'</span>':'')
-          +(d.data?'<span>📅 '+esc(d.data)+'</span>':'')
-          +(d.fisico?'<span>📦 Cx. '+esc(d.fisico.caixa||'—')+'</span>':'')
+          +(d.pasta&&d.tipo!=='digital'?'<span>'+icon('folder')+' '+esc(d.pasta)+'</span>':'')
+          +(d.data?'<span>'+icon('calendar')+' '+esc(d.data)+'</span>':'')
+          +(d.fisico?'<span>'+icon('package')+' Cx. '+esc(d.fisico.caixa||'—')+'</span>':'')
         +'</div>'
       +'</div>'
       +(d.url?'<button onclick="abrirPreviewDocumento(\''+escA(d.url)+'\',\''+escA(d.nome)+'\')" style="flex-shrink:0;height:32px;padding:0 14px;background:var(--azul-escuro);color:#fff;border:none;border-radius:7px;font-family:\'Montserrat\',sans-serif;font-size:.73rem;font-weight:700;cursor:pointer;">Abrir</button>':'')

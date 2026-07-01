@@ -34,7 +34,7 @@ function abrirModalPendencias(tipo) {
   var fnNav = tipo==='ret'?carregarRetiradasAdm.bind(null,'pendente'):tipo==='arq'?carregarArqAdm:null;
 
   if(lista.length===0){
-    abrirModal(titulos[tipo],'','<div class="empty-state"><div class="empty-state-icon">✅</div><p>Nenhuma pendência no momento.</p></div>',false);
+    abrirModal(titulos[tipo],'','<div class="empty-state"><div class="empty-state-icon">'+icon('check')+'</div><p>Nenhuma pendência no momento.</p></div>',false);
     return;
   }
 
@@ -76,46 +76,56 @@ function carregarDashUser() {
     var html='';
 
     // Arquivamentos (agrupado por código — cada lote pode ter vários documentos/linhas)
-    var arqFiltrado=[]; var arqVistos={};
-    (resultados.arq.registros||[]).forEach(function(r){
-      var cod=r['CÓDIGO']||'—';
-      if(arqVistos[cod]) return;
-      arqVistos[cod]=true;
-      if(arqFiltrado.length<5) arqFiltrado.push(r);
+    var lotesArq={};
+    (resultados.arq.registros||[]).forEach(function(reg){
+      var cod=reg['CÓDIGO']||'—';
+      if(!lotesArq[cod]) lotesArq[cod]={codigo:cod,data:reg['DATA']||'',resp:reg['RESPONSÁVEL']||'',dept:reg['DEPARTAMENTO']||'',status:reg['STATUS']||'PENDENTE',docs:[]};
+      lotesArq[cod].docs.push({ descricao: reg['DESCRIÇÃO / TIPO']||reg['ID']||'—', informacao: reg['INFORMAÇÃO']||'' });
     });
+    Object.values(lotesArq).forEach(function(l){ window._LOTES[l.codigo]=l; });
+    var arqFiltrado=Object.values(lotesArq).slice(0,5);
+
     html+='<div style="margin-bottom:24px;">';
     html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Meus arquivamentos</div>';
     if(arqFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhum arquivamento registrado.</div>'; }
     else {
       html+='<div class="user-activity-list">';
-      arqFiltrado.forEach(function(r){
-        html+='<div class="activity-item"><div class="activity-item-icon" style="background:#EFF6FF;">🗄</div>'
-          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(r['CÓDIGO']||'—')+'</div>'
-          +'<div class="activity-item-meta">'+esc(r['DATA']||'—')+'</div></div>'
-          +statusBadge(r['STATUS']||'PENDENTE')+'</div>';
+      arqFiltrado.forEach(function(l){
+        html+='<div class="activity-item" style="cursor:pointer;" onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')"><div class="activity-item-icon" style="background:#EFF6FF;">'+icon('archive')+'</div>'
+          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(l.codigo)+'</div>'
+          +'<div class="activity-item-meta">'+esc(l.data)+'</div></div>'
+          +statusBadge(l.status)+'</div>';
       });
       html+='</div>';
     }
     html+='</div>';
 
     // Retiradas (agrupado por código — cada lote pode ter vários documentos/linhas)
-    var retFiltrado=[]; var retVistos={};
-    (resultados.ret.registros||[]).forEach(function(r){
-      var cod=r['CÓDIGO']||'—';
-      if(retVistos[cod]) return;
-      retVistos[cod]=true;
-      if(retFiltrado.length<5) retFiltrado.push(r);
+    var lotesRet={};
+    (resultados.ret.registros||[]).forEach(function(reg){
+      var cod=reg['CÓDIGO']||'—';
+      if(!lotesRet[cod]) lotesRet[cod]={
+        codigo:cod, data:reg['DATA']||'', status:reg['STATUS RETIRADA']||'PENDENTE',
+        statusDev:reg['STATUS DEVOLUÇÃO']||'', email:reg['EMAIL']||'',
+        responsavel:reg['RESPONSÁVEL']||'', departamento:reg['DEPARTAMENTO']||'',
+        docs:[], caixas:[]
+      };
+      lotesRet[cod].docs.push(reg['DESCRIÇÃO']||reg['DESCRIÇÃO / TIPO']||'—');
+      lotesRet[cod].caixas.push(reg['CAIXA']||'—');
     });
+    Object.values(lotesRet).forEach(function(l){ window._LOTES[l.codigo]=l; });
+    var retFiltrado=Object.values(lotesRet).slice(0,5);
+
     html+='<div>';
     html+='<div style="font-family:\'Montserrat\',sans-serif;font-size:.72rem;font-weight:800;color:var(--texto-leve);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Minhas retiradas</div>';
     if(retFiltrado.length===0){ html+='<div style="font-size:.84rem;color:#94a3b8;padding:12px 0;">Nenhuma retirada registrada.</div>'; }
     else {
       html+='<div class="user-activity-list">';
-      retFiltrado.forEach(function(r){
-        html+='<div class="activity-item"><div class="activity-item-icon" style="background:#F0FDF4;">📤</div>'
-          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(r['CÓDIGO']||'—')+'</div>'
-          +'<div class="activity-item-meta">'+esc(r['DATA']||'—')+' · '+esc(r['DEPARTAMENTO']||'—')+'</div></div>'
-          +statusBadge(r['STATUS RETIRADA']||'PENDENTE')+'</div>';
+      retFiltrado.forEach(function(l){
+        html+='<div class="activity-item" style="cursor:pointer;" onclick="abrirModalHistRetUser(\''+escA(l.codigo)+'\')"><div class="activity-item-icon" style="background:#F0FDF4;">'+icon('upload')+'</div>'
+          +'<div class="activity-item-body"><div class="activity-item-title">'+esc(l.codigo)+'</div>'
+          +'<div class="activity-item-meta">'+esc(l.data)+' · '+esc(l.departamento)+'</div></div>'
+          +statusBadge(l.status)+'</div>';
       });
       html+='</div>';
     }
@@ -127,13 +137,13 @@ function carregarDashUser() {
   google.script.run
     .withSuccessHandler(function(r){ resultados.arq=r; tentarRenderizar(); })
     .withFailureHandler(function(){
-      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
+      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
     })
     .buscarHistorico('arquivamento', S.email);
   google.script.run
     .withSuccessHandler(function(r){ resultados.ret=r; tentarRenderizar(); })
     .withFailureHandler(function(){
-      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
+      document.getElementById('userAtividades').innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar suas atividades. Tente novamente.</p></div>';
     })
     .buscarHistorico('retirada', S.email);
 }

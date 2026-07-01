@@ -14,7 +14,7 @@ var TIPOS_DEPT = {
 };
 
 var ICONS_TIPO = {
-  '1':'📋','2':'📁','3':'📝','6':'🗂','7':'📄','_generico':'📄'
+  '1':'clipboard','2':'folder','3':'edit','6':'archive','7':'filetext','_generico':'filetext'
 };
 
 // Opções fixas do campo "Tipo de Documento" no formulário de arquivamento do usuário
@@ -45,7 +45,7 @@ function renderizarFormArquivamento(wrapId) {
       +'<div class="tipo-docs-grid">';
     tiposDept.forEach(function(t){
       html+='<div class="tipo-doc-card" id="tipo-card-'+t.id+'" onclick="selecionarTipo(\''+t.id+'\')">'
-        +'<span class="tipo-doc-icon">'+(ICONS_TIPO[t.id]||'📄')+'</span>'
+        +'<span class="tipo-doc-icon">'+icon(ICONS_TIPO[t.id]||'filetext')+'</span>'
         +'<div><div class="tipo-doc-nome">'+esc(t.nome)+'</div><div class="tipo-doc-sub">'+esc(t.sub)+'</div></div>'
         +'</div>';
     });
@@ -112,13 +112,13 @@ function renderizarLinhasForm() {
   var deptField = '<div><div class="field-label">Departamento</div><div style="height:38px;padding:0 11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.85rem;color:var(--texto-leve);background:#f8fafc;display:flex;align-items:center;">'+esc(dept)+'</div></div>';
 
   wrap.innerHTML='<div class="form-section">'
-    +'<div class="form-section-title">📄 Documentos</div>'
+    +'<div class="form-section-title">'+icon('filetext')+' Documentos</div>'
     +cabecalho
     +'<div id="arqLinhasBody"></div>'
-    +'<button class="btn-add-row" onclick="addLinhaArq()">＋ Adicionar linha</button>'
+    +'<button class="btn-add-row" onclick="addLinhaArq()">'+icon('plus')+' Adicionar linha</button>'
     +'</div>'
     +'<div class="form-section">'
-    +'<div class="form-section-title">👤 Solicitante</div>'
+    +'<div class="form-section-title">'+icon('user')+' Solicitante</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
     +'<div><div class="field-label">Responsável</div><input class="field-input" id="arqResp" value="'+escA(S.nome)+'" readonly></div>'
     +deptField
@@ -136,7 +136,7 @@ function addLinhaArq(){
   var div=document.createElement('div'); div.className='doc-row';
   var inp=function(ph,cls){ return '<div><input class="field-input '+(cls||'')+'" placeholder="'+escA(ph)+'"></div>'; };
   var sel=function(opts){ return '<div><select class="field-select">'+opts.map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select></div>'; };
-  var rm='<button class="btn-rm" onclick="this.closest(\'.doc-row\').remove()">✕</button>';
+  var rm='<button class="btn-rm" onclick="this.closest(\'.doc-row\').remove()">'+icon('x')+'</button>';
 
   if(tipo==='1'){
     div.classList.add('cols-5');
@@ -218,7 +218,7 @@ function carregarArqAdm(){
       renderizarArqAdmLista(r.lotes||[]);
     })
     .withFailureHandler(function(){
-      document.getElementById('arqAdmLista').innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Erro ao carregar solicitações. Tente novamente.</p></div>';
+      document.getElementById('arqAdmLista').innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('alert')+'</div><p>Erro ao carregar solicitações. Tente novamente.</p></div>';
     })
     .getArquivamentos('pendentes', S.email);
 }
@@ -232,7 +232,7 @@ function trocarDeptArqAdm(dept){
 function renderizarArqAdmLista(lotes){
   var wrap=document.getElementById('arqAdmLista');
   if(!lotes||lotes.length===0){
-    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><p>Nenhuma solicitação pendente.</p></div>';return;
+    wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('check')+'</div><p>Nenhuma solicitação pendente.</p></div>';return;
   }
   wrap.innerHTML=lotes.map(function(l){
     window._LOTES[l.codigo]=l;
@@ -320,7 +320,7 @@ function carregarArqUser(){
     TIPOS_DOCUMENTO_USER.forEach(function(t){ sel.innerHTML+='<option value="'+escA(t.id)+'">'+esc(t.nome)+'</option>'; });
   }
   var da=document.getElementById('arqUserDocsArea');
-  if(da) da.innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8;"><div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">📄</div><p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p></div>';
+  if(da) da.innerHTML='<div style="text-align:center;padding:40px 20px;color:#94a3b8;"><div style="font-size:2.2rem;margin-bottom:10px;opacity:.6;">'+icon('filetext')+'</div><p style="font-size:.84rem;">Selecione o tipo, informe a quantidade e clique em + para adicionar linhas</p></div>';
   var sa=document.getElementById('arqUserSubmitArea'); if(sa) sa.style.display='none';
 }
 
@@ -335,7 +335,7 @@ function adicionarLinhasArqUser(){
     docsArea.innerHTML='<div class="section-card" style="padding:16px 18px;">'
       +'<div class="section-label" style="margin-bottom:12px;">Documentos</div>'
       +'<div id="arqLinhasBody"></div>'
-      +'<button class="btn-add-row" onclick="addLinhaArq()" style="margin-top:8px;">＋ Adicionar linha</button>'
+      +'<button class="btn-add-row" onclick="addLinhaArq()" style="margin-top:8px;">'+icon('plus')+' Adicionar linha</button>'
       +'</div>';
   }
   for(var i=0;i<qtd;i++) addLinhaArq();
@@ -393,7 +393,7 @@ function renderizarHistArq(r,wrapId,perfil){
   }
   // ADM — card list
   var wrap=document.getElementById(wrapId); if(!wrap) return;
-  if(lotesArr.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">📁</div><p>Nenhum registro encontrado.</p></div>';return;}
+  if(lotesArr.length===0){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">'+icon('folder')+'</div><p>Nenhum registro encontrado.</p></div>';return;}
   wrap.innerHTML='<div class="hist-list">'+lotesArr.map(function(l){
     return '<div class="hist-card" style="cursor:pointer;" onclick="abrirModalHistArq(\''+escA(l.codigo)+'\')">'
       +'<div class="hist-card-header"><span class="hist-card-cod">'+esc(l.codigo)+'</span>'+statusBadge(l.status)+'</div>'
@@ -414,7 +414,7 @@ function _renderizarArqHistTabela(lotesArr){
   var tbody=document.getElementById('arqHistTableBody'); if(!tbody) return;
   var footer=document.getElementById('arqHistTableFooter');
   if(lista.length===0){
-    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">🔍</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" class="data-table-empty"><div class="dte-icon">'+icon('search')+'</div><p style="margin-top:6px;">Nenhum registro encontrado.</p></td></tr>';
     if(footer) footer.textContent='Mostrando 0-0 de 0 operação(ões)'; return;
   }
   tbody.innerHTML=lista.map(function(l){
@@ -479,8 +479,8 @@ function abrirModalArqPendente(codigo) {
     +'<table class="lote-docs-table" style="font-size:.83rem;"><thead><tr>'+thCols+'</tr></thead><tbody>'+docsHtml+'</tbody></table>'
     +'</div>'
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;">'
-    +'<button class="btn-acao btn-aprovar" onclick="aprovarLoteArq(\''+escA(codigo)+'\');fecharModal()">✅ Aprovar</button>'
-    +'<button class="btn-acao btn-cancelar" onclick="fecharModal();cancelarLoteArq(\''+escA(codigo)+'\')">✕ Cancelar</button>'
+    +'<button class="btn-acao btn-aprovar" onclick="aprovarLoteArq(\''+escA(codigo)+'\');fecharModal()">'+icon('check')+' Aprovar</button>'
+    +'<button class="btn-acao btn-cancelar" onclick="fecharModal();cancelarLoteArq(\''+escA(codigo)+'\')">'+icon('x')+' Cancelar</button>'
     +'</div>';
   abrirModal('Solicitação de Arquivamento', codigo, corpo, false, '', '', null, '960px');
 }

@@ -8,6 +8,9 @@
 /* ── Importar fontes ── */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
 
+/* ── Ícones SVG ── */
+.icon-svg { display:inline-block; vertical-align:-0.15em; flex-shrink:0; }
+
 /* ── Variáveis globais ── */
 :root {
   /* Paleta principal */
@@ -297,17 +300,6 @@ body {
 }
 .brand-text span { display:block; font-size:13px; font-weight:700; color:#fff; line-height:1.3; letter-spacing:.01em; font-family:'Montserrat',sans-serif; }
 
-/* Perfil badge na sidebar */
-.sidebar-perfil {
-  margin:12px 10px 8px; padding:8px 12px; border-radius:8px;
-  font-size:.72rem; font-weight:700; letter-spacing:.03em;
-  font-family:'Montserrat',sans-serif;
-  display:flex; align-items:center; justify-content:center; gap:6px;
-  white-space:nowrap; overflow:hidden;
-}
-.sidebar-perfil.ged   { background:rgba(217,119,6,.25); color:#FCD34D; border:1px solid rgba(217,119,6,.4); }
-.sidebar-perfil.user  { background:rgba(37,99,235,.25); color:#93c5fd; border:1px solid rgba(37,99,235,.4); }
-
 /* Nav */
 .sidebar-nav { flex:1; padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
 .nav-label   { font-size:9.5px; font-weight:700; color:var(--dark-txt-terciario); text-transform:uppercase; letter-spacing:.1em; padding:14px 14px 5px; }
@@ -367,6 +359,7 @@ body {
   box-shadow:0 1px 3px rgba(0,0,0,.05);
 }
 .topbar-title   { font-size:15px; font-weight:700; color:var(--texto); letter-spacing:-.01em; }
+.topbar-date    { font-family:'Montserrat',sans-serif; font-size:14px; font-weight:700; color:var(--texto); letter-spacing:-.01em; }
 .topbar-divider { width:1px; height:14px; background:#e2e8f0; }
 .topbar-sub     { font-size:11px; color:var(--texto-leve); }
 .topbar-dot     { width:7px; height:7px; border-radius:50%; background:#34d399; margin-left:auto; box-shadow:0 0 6px rgba(52,211,153,.6); }
